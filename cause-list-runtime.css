@@ -45,11 +45,12 @@
 .cob-adesh-link{white-space:nowrap;font-weight:700;background:#fff;color:#792530}
 .cob-adesh-dialog{width:min(900px,100%);height:min(740px,94vh);height:min(740px,94dvh)}
 .cob-adesh-body{padding:18px 22px;display:flex;flex-direction:column;gap:14px;min-height:0;flex:1;overflow:auto;background:#f8f9fb}
+.cob-adesh-dialog,.cob-adesh-dialog *{box-sizing:border-box}
 .cob-adesh-context{margin:0;color:#64748b;font-size:.9rem}
-.cob-adesh-selects{display:grid;grid-template-columns:1fr 1.5fr;gap:14px}
+.cob-adesh-selects{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:14px}
 .cob-adesh-selects select{width:100%;min-width:0;max-width:100%;font:inherit;padding:10px;border:1px solid #ccd3dc;border-radius:9px;background:#fff;color:#263238}
 .cob-adesh-text-label{font-weight:700;color:#792530;font-size:.95rem}
-#cobAdeshText{width:100%;min-height:200px;flex:1;resize:vertical;border:1px solid #d4dae2;border-radius:10px;background:#fff;padding:16px;line-height:1.8;font:inherit;color:#263238;white-space:pre-wrap}
+#cobAdeshText{width:100%;min-height:200px;flex:1;resize:vertical;border:1px solid #d4dae2;border-radius:10px;background:#fff;padding:16px;font-family:"Noto Sans Devanagari","Nirmala UI",Kalimati,sans-serif;font-size:16px;line-height:1.8;color:#263238;white-space:pre-wrap}
 .cob-adesh-status{min-height:1.4em;margin:0;color:#792530;font-size:.86rem}
 .cob-adesh-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid #e1e4e8;background:#fff;flex:none}
 @media(max-width:600px){.cob-import-actions{width:100%;margin:0;order:2}.cob-adesh-dialog{height:100vh;height:100dvh}.cob-adesh-selects{grid-template-columns:1fr}.cob-adesh-body{padding:14px}.cob-adesh-footer{padding:12px;flex-wrap:wrap}}
