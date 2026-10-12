@@ -272,8 +272,14 @@
           b.querySelector(".cob-modal").inert = true;
           bahasOverlay.querySelector(".cob-bahas-close").focus();
         }
-        function insertBahas(text, state) {
+        async function insertBahas(text, state) {
           const body = w.querySelector("[data-cob-main-body='1']");
+          if (previewEnhancer && body?.querySelector("[data-cob-bahas='1']")) {
+            const originalKey = A;
+            closeBahas();
+            text = await previewEnhancer.reviewImport("bahas", text);
+            if (text === null || A !== originalKey) return;
+          }
           if (!body || !text.trim()) return;
           const fragment = document.createDocumentFragment();
           text.replace(/\r/g, "").split(/\n\s*\n/).filter(part => part.trim()).forEach(function (part, index) {
@@ -302,6 +308,7 @@
             previous.forEach(node => node.remove());
           }
           keepAdeshBelowBahas(body);
+          previewEnhancer?.imported("bahas");
           bahasFormState = state;
           if (A) bahasStates.set(A, state);
           closeBahas();
@@ -438,12 +445,19 @@
           // Keep surrounding text in place; move only the imported आदेश paragraphs.
           adesh.forEach(paragraph => { if (!paragraph.contains(anchorBlock)) { anchor.after(paragraph); anchor = paragraph; } });
         }
-        function insertAdesh() {
+        async function insertAdesh() {
           const order = selectedAdesh();
           const body = w.querySelector("[data-cob-main-body='1']");
           if (!body || !order || !order.available || !order.text.trim()) return;
+          let orderText = order.text;
+          if (previewEnhancer && body.querySelector("[data-cob-adesh='1']")) {
+            const originalKey = A;
+            closeAdesh();
+            orderText = await previewEnhancer.reviewImport("adesh", orderText);
+            if (orderText === null || A !== originalKey) return;
+          }
           const fragment = document.createDocumentFragment();
-          order.text.replace(/\r/g, "").split(/\n+/).filter(part => part.trim()).forEach((part, index) => {
+          orderText.replace(/\r/g, "").split(/\n+/).filter(part => part.trim()).forEach((part, index) => {
             const template = document.createElement("template");
             template.innerHTML = V(part.trim(), {firstLine: ["फैसला", "कसूर_सजाय"].includes(g.value)});
             const paragraph = template.content.firstElementChild;
@@ -463,6 +477,7 @@
           else { body.insertBefore(fragment, anchor); previous.forEach(node => node.remove()); }
           rememberAdeshState();
           keepAdeshBelowBahas(body);
+          previewEnhancer?.imported("adesh");
           closeAdesh(); savedDraftRange = null;
           w.dispatchEvent(new Event("input", {bubbles: true}));
           w.focus();
@@ -591,9 +606,19 @@
           <button type="button" id="cobNumberApply">Apply numbering</button><button type="button" id="cobNumberRemove">Remove numbering</button>`;
         toolsPanel.querySelector(".cob-size-control").before(numberingTools);
         const numberStyle = numberingTools.querySelector("select"), numberStart = numberingTools.querySelector("input");
-        numberStyle.addEventListener("change", function () { numberStart.value = numberStyle.value === "hierarchical" ? "1.1" : "1"; });
+        numberStyle.add(new Option("१, २, ३", "nepali"));
+        numberStyle.add(new Option("१.१, १.२, १.३", "nepali-hierarchical"));
+        numberStyle.add(new Option("क, ख, ग", "nepali-alpha"));
+        numberStyle.addEventListener("change", function () { numberStart.value = numberStyle.value.endsWith("hierarchical") ? "1.1" : "1"; });
         numberingTools.querySelectorAll("button").forEach(function (button) { button.addEventListener("mousedown", function (event) { event.preventDefault(); }); });
         function numberLabel(format, value) {
+          if (format === "nepali" || format === "nepali-hierarchical") return String(value).replace(/\d/g, function (n) { return "०१२३४५६७८९"[Number(n)]; }) + ".";
+          if (format === "nepali-alpha") {
+            const letters = ["क","ख","ग","घ","ङ","च","छ","ज","झ","ञ","ट","ठ","ड","ढ","ण","त","थ","द","ध","न","प","फ","ब","भ","म","य","र","ल","व","श","ष","स","ह"];
+            let label = "", index = Number(value);
+            while (index > 0) { index--; label = letters[index % letters.length] + label; index = Math.floor(index / letters.length); }
+            return label + ".";
+          }
           if (format === "hierarchical") return value + ".";
           const n = Number(value);
           if (format === "decimal") return n + ".";
@@ -622,7 +647,7 @@
         }
         numberingTools.querySelector("#cobNumberApply").addEventListener("click", function () {
           const blocks = selectedDraftBlocks(), start = numberStart.value.trim().replace(/[०-९]/g, function (n) { return "०१२३४५६७८९".indexOf(n); });
-          const valid = numberStyle.value === "hierarchical" ? /^[1-9]\d*(?:\.[1-9]\d*)+$/.test(start) : /^[1-9]\d*$/.test(start);
+          const valid = numberStyle.value.endsWith("hierarchical") ? /^[1-9]\d*(?:\.[1-9]\d*)+$/.test(start) : /^[1-9]\d*$/.test(start);
           if (!valid || start.split(".").some(function (n) { return Number(n) > 3999; })) { setToolsStatus("Start at मा 1–3999 राख्नुहोस्; sub-numbering मा 1.1 जस्तै राख्नुहोस्।"); return; }
           if (!blocks.length) { setToolsStatus("पहिले paragraph छान्नुहोस् वा cursor राख्नुहोस्।"); return; }
           const group = "num-" + Date.now() + "-" + Math.random().toString(36).slice(2);
@@ -634,6 +659,21 @@
           refreshNumbering(); w.dispatchEvent(new Event("input", { bubbles: true }));
         });
         w.addEventListener("input", refreshNumbering);
+        function continuePreviousNumbering() {
+          const blocks = selectedDraftBlocks();
+          if (!blocks.length) { setToolsStatus("पहिले paragraph छान्नुहोस्।"); return; }
+          let previous = blocks[0].previousElementSibling;
+          while (previous && previous.dataset.cobList !== "number") previous = previous.previousElementSibling;
+          if (!previous) { setToolsStatus("अघिल्लो numbered paragraph भेटिएन।"); return; }
+          blocks.forEach(function (block) {
+            block.dataset.cobNumberGroup = previous.dataset.cobNumberGroup;
+            block.dataset.cobNumberStart = previous.dataset.cobNumberStart;
+            block.dataset.cobNumberStyle = previous.dataset.cobNumberStyle;
+            setBlockList(block, "number");
+          });
+          refreshNumbering();
+          setToolsStatus("अघिल्लो numbering बाट निरन्तर भयो।");
+        }
         function listMarker(block) {
           return Array.from(block.children).find(function (child) {
             return child.hasAttribute("data-cob-list-marker");
@@ -646,7 +686,7 @@
             ),
             listLevel =
               block.dataset.cobList === "number"
-                ? (block.dataset.cobNumberStyle === "hierarchical" ? (block.dataset.cobNumberStart || "1.1").split(".").length : 1)
+                ? (block.dataset.cobNumberStyle?.endsWith("hierarchical") ? (block.dataset.cobNumberStart || "1.1").split(".").length : 1)
                 : "subbullet" === block.dataset.cobList
                 ? 2
                 : "bullet" === block.dataset.cobList
@@ -666,6 +706,13 @@
           totalLevel
             ? (block.style.marginLeft = totalLevel * 36 + "pt")
             : block.style.removeProperty("margin-left");
+          if (block.dataset.cobCustomIndent !== undefined) {
+            const custom = Math.max(0, Number(block.dataset.cobCustomIndent) || 0);
+            block.dataset.docxLeft = String(Math.round(custom * 20));
+            block.style.marginLeft = custom + "pt";
+          }
+          if (block.dataset.cobCustomFirst !== undefined)
+            block.style.textIndent = Number(block.dataset.cobCustomFirst) + "pt";
         }
         function setBlockList(block, mode) {
           let marker = listMarker(block);
@@ -684,6 +731,8 @@
             block.insertBefore(marker, block.firstChild);
           }
           block.dataset.cobList = mode;
+          if (mode === "number" && block.dataset.cobCustomIndent === "0") block.dataset.cobCustomIndent = "36";
+          if (mode === "number" && block.dataset.cobCustomFirst === "0") block.dataset.cobCustomFirst = "-36";
           marker.textContent = mode === "number" ? numberLabel(block.dataset.cobNumberStyle || "decimal", block.dataset.cobNumberStart || "1") + "\t" : "subbullet" === mode ? "◦\u00a0" : "•\u00a0";
           updateBlockIndent(block);
         }
@@ -698,9 +747,9 @@
             block.dataset.docxP = "1";
             const tabLevel = Number(block.dataset.cobTab || 0);
             if ("tab-add" === tool)
-              block.dataset.cobTab = String(Math.min(6, tabLevel + 1));
+              { block.dataset.cobTab = String(Math.min(6, tabLevel + 1)); if (block.dataset.cobCustomIndent !== undefined) block.dataset.cobCustomIndent = String(Math.min(216, Number(block.dataset.cobCustomIndent) + 36)); }
             else if ("tab-remove" === tool)
-              block.dataset.cobTab = String(Math.max(0, tabLevel - 1));
+              { block.dataset.cobTab = String(Math.max(0, tabLevel - 1)); if (block.dataset.cobCustomIndent !== undefined) block.dataset.cobCustomIndent = String(Math.max(0, Number(block.dataset.cobCustomIndent) - 36)); }
             else if ("bullet-add" === tool) setBlockList(block, "bullet");
             else if ("bullet-remove" === tool) setBlockList(block, "none");
             else if ("subbullet-add" === tool)
@@ -719,7 +768,6 @@
         function continueBulletOnEnter(event) {
           if (
             event.key !== "Enter" ||
-            event.shiftKey ||
             event.ctrlKey ||
             event.metaKey ||
             event.altKey
@@ -746,6 +794,7 @@
           });
           const next = block.cloneNode(!1);
           next.removeAttribute("id");
+          next.removeAttribute("data-pe-page-before");
           next.classList.remove("cob-blank");
           next.dataset.docxP = "1";
           setBlockList(next, mode);
@@ -1468,12 +1517,15 @@
             (savedDraftRange = null),
             b.querySelector("#cobDraftWrap").classList.add("cob-show"),
             !1 !== e && w.focus());
+          previewEnhancer?.refresh();
+          if (b.dataset.cobSyncKey) w.dispatchEvent(new Event("input", {bubbles:true}));
         }
         function preparationSuffix(key) {
           const value = r((t.preparationDetails || {})[key] || "");
           return value ? " " + value : "";
         }
         function re() {
+          previewEnhancer?.close();
           closeBahas();
           closeAdesh();
           (setToolsOpen(!1),
@@ -1675,16 +1727,22 @@
           const style = getComputedStyle(element),
             align = style.textAlign === "justify" ? "both" : ["left", "right", "center"].includes(style.textAlign) ? style.textAlign : "left",
             line = Math.round((parseFloat(style.lineHeight) / parseFloat(style.fontSize) || 1.15) * 240),
-            left = Math.max(0, Number(element.dataset.docxLeft || 0)),
+            left = Math.max(0, element.dataset.cobCustomIndent !== undefined ? Math.round(Number(element.dataset.cobCustomIndent) * 20) : Number(element.dataset.docxLeft || Math.round(parseFloat(style.marginLeft) * 15) || 0)),
+            right = Math.max(0, Math.round(parseFloat(style.marginRight) * 15 || 0)),
             first = Math.round(parseFloat(style.textIndent) * 15 || 0),
-            tabs = element.dataset.cobList === "number" ? '<w:tabs><w:tab w:val="left" w:pos="' + left + '"/></w:tabs>' : element.querySelector(".cob-party-leader,.cob-iti-leader") ? '<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="' + (g.value === "फैसला" ? 9224 : 9638) + '"/></w:tabs>' : "";
+            pageLayout = previewEnhancer?.getLayout(),
+            geometry = pageLayout && window.COBPreviewEnhancements.pageGeometry(pageLayout),
+            textWidth = geometry ? geometry.width - geometry.left - geometry.right : (["फैसला","कसूर_सजाय"].includes(g.value) ? 9224 : 9638),
+            customTabs = String(element.dataset.peTabs || "").split(",").map(Number).filter(function (n) { return n > 0 && n <= 720; }),
+            tabs = customTabs.length ? '<w:tabs>' + customTabs.map(function (n) { return '<w:tab w:val="left" w:pos="' + Math.round(n * 20) + '"/>'; }).join("") + '</w:tabs>' : element.dataset.cobList === "number" ? '<w:tabs><w:tab w:val="left" w:pos="' + left + '"/></w:tabs>' : element.querySelector(".cob-party-leader,.cob-iti-leader") ? '<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="' + textWidth + '"/></w:tabs>' : "";
           const before = Math.max(0, Math.round(parseFloat(style.marginTop) * 15 || 0)),
             after = Math.max(0, Math.round(parseFloat(style.marginBottom) * 15 || 0)),
             nodes = Array.from(contentNodes || element.childNodes);
           // A lone BR is the browser placeholder for an empty paragraph.
           // All other BRs, including consecutive/trailing breaks, are explicit.
           if (nodes.length === 1 && nodes[0].nodeName === "BR") nodes.pop();
-          return '<w:p><w:pPr>' + tabs + '<w:jc w:val="' + align + '"/><w:spacing w:line="' + line + '" w:lineRule="auto" w:before="' + before + '" w:after="' + after + '"/><w:ind w:left="' + left + (element.dataset.cobList === "number" ? '" w:hanging="720' : '" w:firstLine="' + Math.max(0, first)) + '"/></w:pPr>' + nodes.map(runs).join("") + '</w:p>';
+          const keep = (element.dataset.peKeepNext === "1" ? "<w:keepNext/>" : "") + (element.dataset.peKeepLines === "1" ? "<w:keepLines/>" : "") + (element.dataset.pePageBefore === "1" ? "<w:pageBreakBefore/>" : "");
+          return '<w:p><w:pPr>' + tabs + keep + '<w:jc w:val="' + align + '"/><w:spacing w:line="' + line + '" w:lineRule="auto" w:before="' + before + '" w:after="' + after + '"/><w:ind w:left="' + left + '" w:right="' + right + (first < 0 ? '" w:hanging="' + Math.abs(first) : '" w:firstLine="' + first) + '"/></w:pPr>' + nodes.map(runs).join("") + '</w:p>';
         }
         function draftDocxBlocks(root) {
           const blocks = [], blockSelector = "p,div,li,section,article,h1,h2,h3,h4,h5,h6,blockquote,pre,ul,ol";
@@ -1713,26 +1771,44 @@
           visit(root, true);
           return blocks;
         }
+        function draftState() {
+          return {
+            documentType:g.value, judge:y.value, partyStatus:v.value, versusLayout:versusSelect.value,
+            reverseMode:j, reverse:"none" !== j, remarks:h.value, draftHtml:ee(w.innerHTML),
+            bahasFormState:bahasFormState, adeshFormState:adeshFormState,
+            fontSize:Number(w.dataset.cobFontSize || 13), previewLayout:previewEnhancer?.getLayout() || null
+          };
+        }
+        const previewEnhancer = window.COBPreviewEnhancements?.attach({
+          draft:w, panel:toolsPanel, backdrop:b, sanitize:ee, getState:draftState,
+          rememberRange:rememberDraftRange, showTools:function () {setToolsOpen(true);},
+          save:function () {N.click();}, continueNumbering:continuePreviousNumbering,
+          defaultLayout:function () {return ["फैसला","कसूर_सजाय"].includes(g.value) ? {paper:"A4",orientation:"portrait",top:22.225,right:14.2875,bottom:19.05,left:33.02} : {paper:"A4",orientation:"portrait",top:20,right:20,bottom:20,left:20};},
+          restoreState:function (state) {
+            if (!state || typeof state.draftHtml !== "string") return;
+            if (["आदेश","अन्तिम आदेश","फैसला","कसूर_सजाय"].includes(state.documentType)) g.value = state.documentType;
+            if (Array.from(v.options).some(function (o) {return o.value === state.partyStatus;})) v.value = state.partyStatus;
+            if (["leader","stacked"].includes(state.versusLayout)) versusSelect.value = state.versusLayout;
+            j = ["none","partial","full"].includes(state.reverseMode) ? state.reverseMode : "none";
+            if (state.judge && Array.from(y.options).some(function (o) {return o.value === state.judge;})) y.value = state.judge;
+            bahasFormState = state.bahasFormState || null; adeshFormState = state.adeshFormState || null;
+            if (A) {bahasStates.set(A,bahasFormState);adeshStates.set(A,adeshFormState);}
+            w.innerHTML = ee(state.draftHtml); savedDraftRange = null; Z(); Q(); refreshNumbering(); applyPreviewFontSize(state.fontSize,false);
+          }
+        }) || null;
+        function documentSectionXml(isDecision) {
+          const layout = previewEnhancer?.getLayout();
+          if (!layout) return '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' + (isDecision ? '<w:pgMar w:top="1260" w:right="810" w:bottom="1080" w:left="1872"/>' : '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/>') + '</w:sectPr>';
+          const p = window.COBPreviewEnhancements.pageGeometry(layout);
+          return '<w:sectPr><w:pgSz w:w="' + p.width + '" w:h="' + p.height + (p.landscape ? '" w:orient="landscape' : '') + '"/><w:pgMar w:top="' + p.top + '" w:right="' + p.right + '" w:bottom="' + p.bottom + '" w:left="' + p.left + '"/></w:sectPr>';
+        }
         (b.querySelector(".cob-close").addEventListener("click", re),
           b.addEventListener("click", function (e) {
             e.target === b && re();
           }),
           b.querySelector("#cobSave").addEventListener("click", function () {
             if (!T || !A) return;
-            const e = {
-              documentType: g.value,
-              judge: y.value,
-              partyStatus: v.value,
-              versusLayout: versusSelect.value,
-              reverseMode: j,
-              reverse: "none" !== j,
-              remarks: h.value,
-              draftHtml: ee(w.innerHTML),
-              bahasFormState: bahasFormState,
-              adeshFormState: adeshFormState,
-              fontSize: Number(w.dataset.cobFontSize || 13),
-              savedAt: new Date().toISOString(),
-            };
+            const e = Object.assign(draftState(), {savedAt:new Date().toISOString()});
             try {
               (localStorage.setItem(A, JSON.stringify(e)), te(N, "Saved", !1));
             } catch (e) {
@@ -1901,11 +1977,8 @@
                       data:
                         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' +
                         t +
-                        '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
-                        (e
-                          ? '<w:pgMar w:top="1260" w:right="810" w:bottom="1080" w:left="1872"/>'
-                          : '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/>') +
-                        "</w:sectPr></w:body></w:document>",
+                        documentSectionXml(e) +
+                        "</w:body></w:document>",
                     },
                   ]),
                 ],
@@ -2096,7 +2169,7 @@
                             n && "object" == typeof n)
                           ) {
                             if (
-                              (["आदेश", "अन्तिम आदेश", "फैसला"].includes(
+                              (["आदेश", "अन्तिम आदेश", "फैसला", "कसूर_सजाय"].includes(
                                 n.documentType,
                               ) && (g.value = n.documentType),
                               n.judge)
@@ -2141,6 +2214,7 @@
                               !1,
                             ),
                             setToolsOpen(!1),
+                            previewEnhancer?.open(A,n),
                             ne(E),
                             n ? te(N, "Saved", !1) : ne(N),
                             (b.dataset.cobSyncKey = A),
@@ -2261,3 +2335,4 @@
       })(e));
   }
 })();
+

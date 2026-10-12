@@ -2858,7 +2858,7 @@
       }
 
       function installCourtDocumentBuilder(doc, config) {
-        doc.querySelectorAll("#cause-list-ribbon-runtime, #cause-list-ribbon-style, #court-order-builder-runtime, #court-order-builder-style, #nepali-proofreader-engine-runtime, #cause-list-firebase-sync-runtime, #cause-list-firebase-sync-style, #cause-list-config, script[data-cob-nepali-date]")
+        doc.querySelectorAll("#cause-list-ribbon-runtime, #cause-list-ribbon-style, #court-order-builder-runtime, #court-order-builder-style, #preview-editor-runtime, #preview-editor-style, #nepali-proofreader-engine-runtime, #cause-list-firebase-sync-runtime, #cause-list-firebase-sync-style, #cause-list-config, script[data-cob-nepali-date]")
           .forEach((node) => node.remove());
         const head = doc.head || doc.documentElement.insertBefore(doc.createElement("head"), doc.body || null);
         const ribbonStyle = doc.createElement("link");
@@ -2871,6 +2871,11 @@
         style.rel = "stylesheet";
         style.href = "cause-list-runtime.css?v=adesh-2";
         head.appendChild(style);
+        const editorStyle = doc.createElement("link");
+        editorStyle.id = "preview-editor-style";
+        editorStyle.rel = "stylesheet";
+        editorStyle.href = "preview-editor.css?v=1";
+        head.appendChild(editorStyle);
         const syncStyle = doc.createElement("link");
         syncStyle.id = "cause-list-firebase-sync-style";
         syncStyle.rel = "stylesheet";
@@ -2891,10 +2896,16 @@
         dateLibrary.setAttribute("data-cob-nepali-date", "3.4.0");
         dateLibrary.src = "https://cdn.jsdelivr.net/npm/nepali-date-converter@3.4.0/dist/nepali-date-converter.umd.js";
         (doc.body || doc.documentElement).appendChild(dateLibrary);
+        const editorRuntime = doc.createElement("script");
+        editorRuntime.id = "preview-editor-runtime";
+        editorRuntime.async = false;
+        editorRuntime.src = "preview-editor.js?v=1";
+        (doc.body || doc.documentElement).appendChild(editorRuntime);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";
-        runtime.setAttribute("data-version", "adesh-1");
-        runtime.src = "cause-list-runtime.js?v=adesh-1";
+        runtime.async = false;
+        runtime.setAttribute("data-version", "preview-editor-1");
+        runtime.src = "cause-list-runtime.js?v=preview-editor-1";
         (doc.body || doc.documentElement).appendChild(runtime);
         const proofreaderRuntime = doc.createElement("script");
         proofreaderRuntime.id = "nepali-proofreader-engine-runtime";
@@ -3821,3 +3832,4 @@
   <script id="cause-list-firebase-sync-runtime" defer src="firebase-sync.js?v=5"></script>
 </body>
 </html>
+

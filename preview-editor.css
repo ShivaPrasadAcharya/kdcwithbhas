@@ -1,0 +1,51 @@
+.pe-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:12px 0 0;padding:9px;background:#f7f2ec;border:1px solid #ded4c9;border-radius:9px}
+.pe-toolbar[hidden]{display:none}
+.pe-toolbar button,.pe-toolbar select,.pe-tools button{font:600 12px/1.4 "Noto Sans Devanagari","Nirmala UI",sans-serif;padding:6px 9px;border:1px solid #c8bbae;border-radius:6px;color:#34262a;background:#fff;cursor:pointer}
+.pe-toolbar button:hover,.pe-tools button:hover{border-color:#7b1f2b;background:#fff5ed}
+.pe-toolbar button:disabled,.pe-tools button:disabled{opacity:.4;cursor:default}
+.pe-toolbar select{max-width:190px}
+.pe-toolbar button[aria-pressed=true]{background:#7b1f2b;color:#fff}
+.pe-status{font:12px/1.5 "Noto Sans Devanagari","Nirmala UI",sans-serif;color:#6d1724;margin:6px 0;min-height:0}
+.pe-status:empty{display:none}
+.cob-tools-panel:has(.pe-tools){width:min(410px,calc(100vw - 76px));max-height:82vh;padding:13px}
+.pe-section{margin-top:10px;border:1px solid #ded4ca;border-radius:8px;overflow:hidden}
+.pe-section>summary{padding:9px;background:#f8f5f1;font-size:12px;font-weight:700;cursor:pointer}
+.pe-section>summary:focus-visible{outline:2px solid #7b1f2b;outline-offset:-3px}
+.pe-section[open]>summary{border-bottom:1px solid #e5dbd0}
+.pe-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:10px}
+.pe-tools label{display:grid;gap:4px;font-size:11px;font-weight:600;min-width:0}
+.pe-tools input,.pe-tools select,.pe-tools textarea{width:100%;min-width:0;box-sizing:border-box;padding:6px;border:1px solid #c9bfb5;border-radius:5px;background:#fff;color:#252127;font:12px/1.4 inherit}
+.pe-tools input[type=color]{height:32px;padding:2px}
+.pe-tools input[type=hidden]{display:none}
+.pe-tools .pe-check{display:flex;align-items:center;gap:6px;font-weight:500}
+.pe-tools .pe-check input{width:auto;accent-color:#7b1f2b}
+.pe-full{grid-column:1/-1}
+.pe-buttons{display:flex;flex-wrap:wrap;gap:6px;padding:9px}
+.pe-section>label{padding:9px}
+.pe-section small{display:block;padding:0 10px 10px;font-size:10px;line-height:1.5;color:#756a6d}
+.pe-section output{display:block;padding:4px 10px 10px;font-size:12px}
+.cob-draft p{white-space:pre-wrap}
+.cob-draft.pe-page-layout{box-sizing:border-box;max-width:100%;margin:0 auto}
+.cob-draft [data-pe-page-before="1"]{break-before:page;page-break-before:always}
+.cob-draft [data-pe-keep-next="1"]{break-after:avoid;page-break-after:avoid}
+.cob-draft [data-pe-keep-lines="1"]{break-inside:avoid;page-break-inside:avoid}
+.cob-draft.pe-show-marks p::after{content:" ¶";color:#a18b9b;font:11px/1 sans-serif;user-select:none;pointer-events:none}
+.cob-draft [data-pe-tab]{position:relative;white-space:pre}
+.cob-draft.pe-show-marks [data-pe-tab]::after{position:absolute;left:0;content:"→";font-size:10px;color:#a18b9b;pointer-events:none;user-select:none}
+@media screen{.cob-draft [data-pe-page-before="1"]{border-top:1px dashed #bba6a6;padding-top:8px;margin-top:12px}}
+::highlight(pe-search){background:#ffe8a3;color:inherit}
+.pe-dialog-backdrop{position:fixed;inset:0;z-index:2147483640;display:grid;place-items:center;padding:18px;background:#111827a6;font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}
+.pe-dialog{display:flex;flex-direction:column;gap:12px;width:min(960px,100%);max-height:90vh;max-height:90dvh;overflow:auto;padding:20px;border-radius:14px;background:#fff;color:#252127;box-shadow:0 24px 90px #0005}
+.pe-dialog h3{margin:0;color:#6d1724;font-size:18px}
+.pe-dialog p{margin:0;font-size:13px;line-height:1.65}
+.pe-dialog .pe-buttons{padding:0;justify-content:flex-end}
+.pe-dialog button{padding:9px 13px;border:1px solid #c8bbae;border-radius:7px;background:#fff;color:#34262a;font:600 13px/1.4 inherit;cursor:pointer}
+.pe-dialog button.pe-primary{background:#7b1f2b;color:#fff;border-color:#7b1f2b}
+.pe-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pe-compare label{display:grid;gap:6px;font-size:13px;font-weight:600}
+.pe-compare textarea{width:100%;min-height:200px;box-sizing:border-box;padding:12px;border:1px solid #d2c6bd;border-radius:8px;color:#222;background:#fff;font:15px/1.7 "Noto Sans Devanagari","Nirmala UI",sans-serif;resize:vertical}
+.pe-diff{max-height:200px;overflow:auto;padding:10px;border:1px solid #eee;border-radius:8px;font-size:12px}
+.pe-diff .pe-deleted{background:#fff0f0;color:#922;text-decoration:line-through;margin-bottom:5px;padding:5px}
+.pe-diff .pe-added{background:#edf8ef;color:#174f2c;margin-bottom:5px;padding:5px}
+@media(max-width:700px){.cob-tools-panel:has(.pe-tools){width:auto;max-height:75vh}.pe-toolbar{padding:7px}.pe-compare{grid-template-columns:1fr}.pe-dialog{padding:14px}.pe-compare textarea{min-height:140px}.pe-dialog-backdrop{padding:8px}}
+@media print{.pe-toolbar,.pe-status,.pe-dialog-backdrop{display:none!important}.cob-draft.pe-page-layout{width:auto!important;min-height:0!important;max-width:none!important;padding:0!important;margin:0!important}.cob-draft.pe-show-marks p::after,.cob-draft.pe-show-marks [data-pe-tab]::after{content:none!important}.cob-draft [data-pe-page-before]{border:0!important;padding-top:0!important}}
