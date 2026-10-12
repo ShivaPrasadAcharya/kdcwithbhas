@@ -1,0 +1,19 @@
+body{background:#f7f7f9}
+.topbar{position:static;box-shadow:none;border-bottom:1px solid var(--border)}
+.wrap{max-width:1000px;padding:16px 20px 100px}
+.card{padding:22px;box-shadow:0 4px 20px #00000008}
+.form-id-row,.ornament,.fab-wrap,.scroll-link,#downloadAllZip,#newFormBtn,#addPartyBtn{display:none!important}
+.partyBlock{padding:16px;background:var(--panel);box-shadow:none}
+.partySide[hidden]{display:none!important}
+.inherited-role{display:block;padding:10px 0;color:var(--primary);font-size:1.08rem}
+.government-option{display:flex!important;gap:7px;align-items:center;font-size:.86rem!important;margin-top:3px!important}
+.government-option input{width:auto}
+.partyTitle .badge{display:none}
+.remove-party-btn{display:none!important}
+.partyFields{grid-template-columns:1fr 2fr}
+.section-eyebrow{font-size:.95rem}
+.output{white-space:pre-wrap}
+.bahas-context{color:var(--muted);font-size:.9rem;margin:0 0 12px}
+.bahas-export-bar{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:var(--panel);border-top:1px solid var(--border);padding:12px 20px;display:flex;gap:12px;align-items:center;justify-content:flex-end;box-shadow:0 -3px 16px #00000008}
+#bahasExportStatus{margin-right:auto;font-size:.85rem;color:var(--primary)}
+@media(max-width:620px){.wrap{padding:12px 10px 115px}.card{padding:14px}.partyFields{grid-template-columns:1fr}.bahas-export-bar{flex-wrap:wrap;padding:10px}#bahasExportStatus{width:100%}}
