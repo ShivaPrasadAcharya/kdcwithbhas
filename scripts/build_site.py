@@ -4,12 +4,15 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 
 SOURCE = Path(__file__).resolve().parents[1]
 OUTPUT = SOURCE / "dist"
 
 
 def build():
+    subprocess.run(["node", "--check", "preview-editor.js"], cwd=SOURCE, check=True)
+    subprocess.run(["node", "preview-editor.test.cjs"], cwd=SOURCE, check=True)
     records = json.loads((SOURCE / "advocatedata.json").read_text(encoding="utf-8"))
     if not isinstance(records, list) or not records:
         raise ValueError("advocatedata.json must contain a nonempty record array")
@@ -41,3 +44,4 @@ def build():
 
 if __name__ == "__main__":
     build()
+
