@@ -984,7 +984,7 @@
     <div class="intro">
       <div>
         <h2>मिति राख्नुहोस्, पेशी सूची ल्याउनुहोस् र आदेश तयार गर्नुहोस्</h2>
-        <p>पेशी सूचीबाट नेपाली अदालती आदेश वा फैसला तयार गर्नुहोस्। Preview को बहससहित button बाट कानून व्यवसायीको बहस कागजातको व्यहोरामा समावेश गर्न सकिन्छ।</p>
+        <p>पेशी सूचीबाट नेपाली अदालती आदेश वा फैसला तयार गर्नुहोस्। Preview का बहससहित र आदेशसहित button बाट बहस तथा छानिएको आदेश कागजातको व्यहोरामा समावेश गर्न सकिन्छ।</p>
       </div>
       <div class="privacy-note" title="फाइल बाह्य server मा पठाइँदैन">● Browser भित्रै प्रशोधन हुन्छ</div>
     </div>
@@ -2869,7 +2869,7 @@
         const style = doc.createElement("link");
         style.id = "court-order-builder-style";
         style.rel = "stylesheet";
-        style.href = "cause-list-runtime.css?v=bahas-1";
+        style.href = "cause-list-runtime.css?v=adesh-1";
         head.appendChild(style);
         const syncStyle = doc.createElement("link");
         syncStyle.id = "cause-list-firebase-sync-style";
@@ -2893,8 +2893,8 @@
         (doc.body || doc.documentElement).appendChild(dateLibrary);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";
-        runtime.setAttribute("data-version", "bahas-1");
-        runtime.src = "cause-list-runtime.js?v=bahas-1";
+        runtime.setAttribute("data-version", "adesh-1");
+        runtime.src = "cause-list-runtime.js?v=adesh-1";
         (doc.body || doc.documentElement).appendChild(runtime);
         const proofreaderRuntime = doc.createElement("script");
         proofreaderRuntime.id = "nepali-proofreader-engine-runtime";

@@ -7,9 +7,12 @@ Created from `ShivaPrasadAcharya/kdc`, with the advocate lookup and sentence gen
 3. Click **बहससहित** in the preview header. The form inherits both side labels, including combined labels and full reverse.
 4. Enter advocate licence numbers or custom names, and optionally select government counsel, senior advocates (`*`), sentence options, and custom text.
 5. Click **Export — बहस समावेश गर्नुहोस्**. The output enters the editable document body, at the current paragraph when a body cursor was selected, otherwise at the beginning. Re-export replaces the previous generated passage without replacing the surrounding body text.
-6. Save, copy, print, or download `.docx` using the existing preview tools. Save also retains the form input for that case.
+6. Click **आदेशसहित** beside **बहससहित**, choose **आदेशको वर्ग** and its dependent **आदेशको व्यहोरा**, review the text, and click **Export — आदेश समावेश गर्नुहोस्**. The order enters below the imported बहस. Importing बहस later also keeps it above the order. Re-export replaces only the previously imported order.
+7. Save, copy, print, or download `.docx` using the existing preview tools. Save also retains the form input for that case.
 
 The inherited form labels replace generic Party 1/Party 2 headings. Existing KDC filtering, preparation fields, preview formatting, downloads, and synchronization remain available. Draft storage has a separate prefix to keep this project’s drafts independent.
+
+Order choices and their supplied text are retained in `adesh-catalog.json`, imported from `ShivaPrasadAcharya/ordergeneratorfromcauselist`. All 20 categories and 68 dropdown choices are retained; empty source choices remain visible with Export disabled. TXT/JSON and Word paragraphs are included as editable order text.
 
 ## Data and deployment
 

@@ -1,6 +1,7 @@
 !(function () {
   "use strict";
   const bahasFormUrl = new URL("bahas.html", document.currentScript.src || document.baseURI).href;
+  const adeshCatalogUrl = new URL("adesh-catalog.json?v=1", document.currentScript.src || document.baseURI).href;
   if (!document.documentElement.dataset.cobRuntimeLoaded) {
     document.documentElement.dataset.cobRuntimeLoaded = "1";
     var e = {},
@@ -143,7 +144,7 @@
           b = document.createElement("div");
         ((b.className = "cob-backdrop"),
           (b.innerHTML =
-            '<section class="cob-modal" role="dialog" aria-modal="true" aria-labelledby="cobTitle"><header class="cob-head"><h2 id="cobTitle">नेपाली अदालती आदेश/फैसला</h2><button type="button" id="cobBahas" class="cob-btn cob-bahas-link" aria-haspopup="dialog">⚖ बहससहित</button><button class="cob-close" type="button" aria-label="बन्द गर्नुहोस्">×</button></header><div class="cob-body"><div class="cob-controls"><div class="cob-field"><label for="cobType">कागजातको प्रकार</label><select id="cobType"><option>आदेश</option><option>अन्तिम आदेश</option><option>फैसला</option><option>कसूर_सजाय</option></select></div><div class="cob-field"><label for="cobVersusLayout">विरुद्ध खण्ड</label><select id="cobVersusLayout"><option value="leader">ट्याब लिडरसहित</option><option value="stacked">ट्याब लिडरबिना</option></select></div><div class="cob-field"><label for="cobJudge">श्रीमान्</label><select id="cobJudge"></select></div><div class="cob-field cob-wide"><label for="cobPartyStatus">पक्षहरूको हैसियत</label><div class="cob-party-control"><select id="cobPartyStatus"><option value="वादी|प्रतिवादी">वादी, प्रतिवादी</option><option value="निवेदक|विपक्षी">निवेदक, विपक्षी</option><option value="पुनरावेदक|प्रत्यर्थी">पुनरावेदक, प्रत्यर्थी</option><option value="निवेदक/वादी|विपक्षी/प्रतिवादी">निवेदक/वादी, विपक्षी/प्रतिवादी</option><option value="निवेदक/प्रतिवादी|विपक्षी/वादी">निवेदक/प्रतिवादी, विपक्षी/वादी</option><option value="निवेदक/वादी|विपक्षी">निवेदक/वादी, विपक्षी</option><option value="निवेदक/प्रतिवादी|विपक्षी">निवेदक/प्रतिवादी, विपक्षी</option><option value="निवेदक|विपक्षी/वादी">निवेदक, विपक्षी/वादी</option><option value="निवेदक|विपक्षी/प्रतिवादी">निवेदक, विपक्षी/प्रतिवादी</option><option value="पुनरावेदक/वादी|प्रत्यर्थी/प्रतिवादी">पुनरावेदक/वादी, प्रत्यर्थी/प्रतिवादी</option><option value="पुनरावेदक/प्रतिवादी|प्रत्यर्थी/वादी">पुनरावेदक/प्रतिवादी, प्रत्यर्थी/वादी</option></select><button type="button" class="cob-reverse" id="cobReverse" data-active="0" aria-pressed="false"><span>Reverse</span><span class="cob-reverse-mark" id="cobReverseMark" aria-hidden="true">✕</span></button></div></div><div class="cob-summary" id="cobSummary" aria-label="मुद्दाको स्वतः प्राप्त विवरण"></div><div class="cob-field cob-wide"><label for="cobRemarks">कैफियत</label><textarea id="cobRemarks" placeholder="आदेश वा फैसलाको व्यहोरा यहाँ लेख्नुहोस्"></textarea></div></div><p class="cob-note">मुद्दाको विवरण source row बाट स्वतः लिइन्छ। कैफियत मात्र सम्पादनयोग्य content field हो।</p><div class="cob-actions"><button type="button" class="cob-btn cob-primary" id="cobGenerate">मस्यौदा तयार गर्नुहोस्</button><button type="button" class="cob-btn" id="cobTools">Tools</button><button type="button" class="cob-btn" id="cobSave">सुरक्षित गर्नुहोस्</button><button type="button" class="cob-btn" id="cobCopy">Copy</button><button type="button" class="cob-btn" id="cobDocx">Download .docx</button><button type="button" class="cob-btn" id="cobPrint">Print</button><span class="cob-save-status" id="cobSaveStatus" role="status" aria-live="polite"></span></div><aside class="cob-tools-panel" id="cobToolsPanel" aria-label="Preview formatting tools" hidden><div class="cob-tools-head"><strong>Preview Tools</strong><button type="button" class="cob-tools-close" aria-label="Tools बन्द गर्नुहोस्">×</button></div><p class="cob-tools-help">Cursor राख्नुहोस् वा line/paragraph छान्नुहोस्। Ascend/Descend ले bullet नहटाई indent मात्र बदल्छ।</p><div class="cob-tools-grid"><button type="button" data-cob-tool="tab-remove" title="Tab घटाई माथिल्लो indent level मा लैजानुहोस्">← Ascend indent</button><button type="button" data-cob-tool="tab-add" title="Tab थपेर तल्लो indent level मा लैजानुहोस्">Descend indent →</button><button type="button" data-cob-tool="bullet-add">+ Bullet</button><button type="button" data-cob-tool="bullet-remove">− Bullet</button><button type="button" data-cob-tool="subbullet-add">+ Subbullet</button><button type="button" data-cob-tool="subbullet-remove">− Subbullet</button></div><label class="cob-size-control" for="cobFontSize"><span>Text size</span><output id="cobFontSizeValue">13 pt</output><input id="cobFontSize" type="range" min="9" max="24" step="0.5" value="13"></label><p class="cob-tools-status" id="cobToolsStatus" aria-live="polite"></p></aside><div class="cob-draft-wrap" id="cobDraftWrap"><div class="cob-draft" id="cobDraft" contenteditable="true" spellcheck="true" data-cob-font-size="13"></div></div></div></section>'),
+            '<section class="cob-modal" role="dialog" aria-modal="true" aria-labelledby="cobTitle"><header class="cob-head"><h2 id="cobTitle">नेपाली अदालती आदेश/फैसला</h2><div class="cob-import-actions"><button type="button" id="cobBahas" class="cob-btn cob-bahas-link" aria-haspopup="dialog">⚖ बहससहित</button><button type="button" id="cobAdesh" class="cob-btn cob-adesh-link" aria-haspopup="dialog">📄 आदेशसहित</button></div><button class="cob-close" type="button" aria-label="बन्द गर्नुहोस्">×</button></header><div class="cob-body"><div class="cob-controls"><div class="cob-field"><label for="cobType">कागजातको प्रकार</label><select id="cobType"><option>आदेश</option><option>अन्तिम आदेश</option><option>फैसला</option><option>कसूर_सजाय</option></select></div><div class="cob-field"><label for="cobVersusLayout">विरुद्ध खण्ड</label><select id="cobVersusLayout"><option value="leader">ट्याब लिडरसहित</option><option value="stacked">ट्याब लिडरबिना</option></select></div><div class="cob-field"><label for="cobJudge">श्रीमान्</label><select id="cobJudge"></select></div><div class="cob-field cob-wide"><label for="cobPartyStatus">पक्षहरूको हैसियत</label><div class="cob-party-control"><select id="cobPartyStatus"><option value="वादी|प्रतिवादी">वादी, प्रतिवादी</option><option value="निवेदक|विपक्षी">निवेदक, विपक्षी</option><option value="पुनरावेदक|प्रत्यर्थी">पुनरावेदक, प्रत्यर्थी</option><option value="निवेदक/वादी|विपक्षी/प्रतिवादी">निवेदक/वादी, विपक्षी/प्रतिवादी</option><option value="निवेदक/प्रतिवादी|विपक्षी/वादी">निवेदक/प्रतिवादी, विपक्षी/वादी</option><option value="निवेदक/वादी|विपक्षी">निवेदक/वादी, विपक्षी</option><option value="निवेदक/प्रतिवादी|विपक्षी">निवेदक/प्रतिवादी, विपक्षी</option><option value="निवेदक|विपक्षी/वादी">निवेदक, विपक्षी/वादी</option><option value="निवेदक|विपक्षी/प्रतिवादी">निवेदक, विपक्षी/प्रतिवादी</option><option value="पुनरावेदक/वादी|प्रत्यर्थी/प्रतिवादी">पुनरावेदक/वादी, प्रत्यर्थी/प्रतिवादी</option><option value="पुनरावेदक/प्रतिवादी|प्रत्यर्थी/वादी">पुनरावेदक/प्रतिवादी, प्रत्यर्थी/वादी</option></select><button type="button" class="cob-reverse" id="cobReverse" data-active="0" aria-pressed="false"><span>Reverse</span><span class="cob-reverse-mark" id="cobReverseMark" aria-hidden="true">✕</span></button></div></div><div class="cob-summary" id="cobSummary" aria-label="मुद्दाको स्वतः प्राप्त विवरण"></div><div class="cob-field cob-wide"><label for="cobRemarks">कैफियत</label><textarea id="cobRemarks" placeholder="आदेश वा फैसलाको व्यहोरा यहाँ लेख्नुहोस्"></textarea></div></div><p class="cob-note">मुद्दाको विवरण source row बाट स्वतः लिइन्छ। कैफियत मात्र सम्पादनयोग्य content field हो।</p><div class="cob-actions"><button type="button" class="cob-btn cob-primary" id="cobGenerate">मस्यौदा तयार गर्नुहोस्</button><button type="button" class="cob-btn" id="cobTools">Tools</button><button type="button" class="cob-btn" id="cobSave">सुरक्षित गर्नुहोस्</button><button type="button" class="cob-btn" id="cobCopy">Copy</button><button type="button" class="cob-btn" id="cobDocx">Download .docx</button><button type="button" class="cob-btn" id="cobPrint">Print</button><span class="cob-save-status" id="cobSaveStatus" role="status" aria-live="polite"></span></div><aside class="cob-tools-panel" id="cobToolsPanel" aria-label="Preview formatting tools" hidden><div class="cob-tools-head"><strong>Preview Tools</strong><button type="button" class="cob-tools-close" aria-label="Tools बन्द गर्नुहोस्">×</button></div><p class="cob-tools-help">Cursor राख्नुहोस् वा line/paragraph छान्नुहोस्। Ascend/Descend ले bullet नहटाई indent मात्र बदल्छ।</p><div class="cob-tools-grid"><button type="button" data-cob-tool="tab-remove" title="Tab घटाई माथिल्लो indent level मा लैजानुहोस्">← Ascend indent</button><button type="button" data-cob-tool="tab-add" title="Tab थपेर तल्लो indent level मा लैजानुहोस्">Descend indent →</button><button type="button" data-cob-tool="bullet-add">+ Bullet</button><button type="button" data-cob-tool="bullet-remove">− Bullet</button><button type="button" data-cob-tool="subbullet-add">+ Subbullet</button><button type="button" data-cob-tool="subbullet-remove">− Subbullet</button></div><label class="cob-size-control" for="cobFontSize"><span>Text size</span><output id="cobFontSizeValue">13 pt</output><input id="cobFontSize" type="range" min="9" max="24" step="0.5" value="13"></label><p class="cob-tools-status" id="cobToolsStatus" aria-live="polite"></p></aside><div class="cob-draft-wrap" id="cobDraftWrap"><div class="cob-draft" id="cobDraft" contenteditable="true" spellcheck="true" data-cob-font-size="13"></div></div></div></section>'),
           document.body.appendChild(b));
         const w = b.querySelector("#cobDraft"),
           h = b.querySelector("#cobRemarks"),
@@ -300,6 +301,7 @@
             body.insertBefore(fragment, anchor);
             previous.forEach(node => node.remove());
           }
+          keepAdeshBelowBahas(body);
           bahasFormState = state;
           if (A) bahasStates.set(A, state);
           closeBahas();
@@ -335,6 +337,157 @@
             insertBahas(message.text, message.state);
           }
         });
+        let adeshFormState = null;
+        const adeshStates = new Map();
+        let adeshCatalog = null;
+        let adeshCatalogPromise = null;
+        let adeshOpenVersion = 0;
+        const adeshButton = b.querySelector("#cobAdesh");
+        const adeshOverlay = document.createElement("div");
+        adeshOverlay.className = "cob-bahas-overlay cob-adesh-overlay";
+        adeshOverlay.hidden = true;
+        adeshOverlay.innerHTML = '<section class="cob-bahas-dialog cob-adesh-dialog" role="dialog" aria-modal="true" aria-labelledby="cobAdeshTitle"><header><div><h3 id="cobAdeshTitle">आदेशसहित</h3><p>आदेशको वर्ग र व्यहोरा छान्नुहोस्। Export गर्दा बहसभन्दा तल समावेश हुन्छ।</p></div><button type="button" class="cob-bahas-close" aria-label="आदेश form बन्द गर्नुहोस्">×</button></header><div class="cob-adesh-body"><p id="cobAdeshContext" class="cob-adesh-context"></p><div class="cob-adesh-selects"><div class="cob-field"><label for="cobAdeshCategory">आदेशको वर्ग</label><select id="cobAdeshCategory" disabled><option value="">आदेशको वर्ग रोज्नुहोस्</option></select></div><div class="cob-field"><label for="cobAdeshOrder">आदेशको व्यहोरा</label><select id="cobAdeshOrder" disabled><option value="">पहिले आदेशको वर्ग रोज्नुहोस्</option></select></div></div><label for="cobAdeshText" class="cob-adesh-text-label">छानिएको आदेश</label><textarea id="cobAdeshText" readonly placeholder="आदेश छानेपछि व्यहोरा यहाँ देखिन्छ।"></textarea><p class="cob-adesh-status" id="cobAdeshStatus" role="status" aria-live="polite"></p></div><footer class="cob-adesh-footer"><button type="button" class="cob-btn" id="cobAdeshCancel">फर्कनुहोस्</button><button type="button" class="cob-btn cob-primary" id="cobAdeshExport" disabled>Export — आदेश समावेश गर्नुहोस्</button></footer></section>';
+        b.appendChild(adeshOverlay);
+        const adeshCategory = adeshOverlay.querySelector("#cobAdeshCategory");
+        const adeshOrder = adeshOverlay.querySelector("#cobAdeshOrder");
+        const adeshText = adeshOverlay.querySelector("#cobAdeshText");
+        const adeshStatus = adeshOverlay.querySelector("#cobAdeshStatus");
+        const adeshExport = adeshOverlay.querySelector("#cobAdeshExport");
+        function selectedAdesh() {
+          const category = adeshCatalog?.categories.find(item => item.id === adeshCategory.value);
+          return category?.orders.find(item => item.id === adeshOrder.value) || null;
+        }
+        function rememberAdeshState() {
+          adeshFormState = {categoryId: adeshCategory.value, orderId: adeshOrder.value};
+          if (A) adeshStates.set(A, adeshFormState);
+        }
+        function updateAdeshText() {
+          const order = selectedAdesh();
+          adeshText.value = order ? order.text : "";
+          adeshExport.disabled = !order || !order.available || !order.text.trim();
+          adeshStatus.textContent = order && !order.available ? (order.message || "यो आदेशको व्यहोरा खाली छ। अर्को आदेश छान्नुहोस्।") : "";
+        }
+        function updateAdeshOrders(orderId) {
+          const category = adeshCatalog?.categories.find(item => item.id === adeshCategory.value);
+          adeshOrder.replaceChildren(new Option(category ? "आदेशको व्यहोरा रोज्नुहोस्" : "पहिले आदेशको वर्ग रोज्नुहोस्", ""));
+          adeshOrder.disabled = !category;
+          if (category) category.orders.slice().sort((a, b) => a.label.localeCompare(b.label, "ne")).forEach(order => {
+            const option = new Option(order.label, order.id);
+            option.title = order.keywords || order.label;
+            adeshOrder.add(option);
+          });
+          if (orderId && Array.from(adeshOrder.options).some(option => option.value === orderId)) adeshOrder.value = orderId;
+          updateAdeshText();
+        }
+        async function loadAdeshCatalog() {
+          if (adeshCatalog) return adeshCatalog;
+          if (!adeshCatalogPromise) adeshCatalogPromise = fetch(adeshCatalogUrl).then(response => {
+            if (!response.ok) throw new Error("आदेशको सूची ल्याउन सकिएन। फेरि खोल्नुहोस्।");
+            return response.json();
+          }).then(catalog => {
+            if (!Array.isArray(catalog.categories) || !catalog.categories.length || catalog.categories.some(category => typeof category.id !== "string" || typeof category.label !== "string" || !Array.isArray(category.orders) || category.orders.some(order => typeof order.id !== "string" || typeof order.label !== "string" || typeof order.text !== "string"))) throw new Error("आदेशको सूची ल्याउन सकिएन। फेरि खोल्नुहोस्।");
+            adeshCatalog = catalog;
+            return catalog;
+          }).catch(error => { adeshCatalogPromise = null; throw error; });
+          return adeshCatalogPromise;
+        }
+        async function openAdesh() {
+          if (!T) return;
+          const version = ++adeshOpenVersion;
+          adeshOverlay.hidden = false;
+          b.querySelector(".cob-modal").inert = true;
+          adeshCategory.disabled = true; adeshOrder.disabled = true; adeshExport.disabled = true;
+          adeshText.value = ""; adeshStatus.textContent = "आदेशको सूची ल्याउँदैछ…";
+          adeshOverlay.querySelector("#cobAdeshContext").textContent = m(T.rawCase).caseNo + " · " + bahasRoles().join(" / ");
+          adeshOverlay.querySelector(".cob-bahas-close").focus();
+          const imported = w.querySelector("[data-cob-adesh='1']");
+          if (!adeshFormState && imported) adeshFormState = {categoryId: imported.dataset.cobAdeshCategory || "", orderId: imported.dataset.cobAdeshOrder || ""};
+          try {
+            const catalog = await loadAdeshCatalog();
+            if (version !== adeshOpenVersion || adeshOverlay.hidden) return;
+            adeshCategory.replaceChildren(new Option("आदेशको वर्ग रोज्नुहोस्", ""));
+            catalog.categories.slice().sort((a, b) => a.label.localeCompare(b.label, "ne")).forEach(category => adeshCategory.add(new Option(category.label, category.id)));
+            adeshCategory.disabled = false;
+            if (adeshFormState?.categoryId && Array.from(adeshCategory.options).some(option => option.value === adeshFormState.categoryId)) adeshCategory.value = adeshFormState.categoryId;
+            updateAdeshOrders(adeshFormState?.orderId);
+            adeshStatus.textContent = selectedAdesh()?.available === false ? selectedAdesh().message : "";
+            adeshCategory.focus();
+          } catch (error) {
+            if (version === adeshOpenVersion && !adeshOverlay.hidden) adeshStatus.textContent = error.message;
+          }
+        }
+        function closeAdesh() {
+          if (adeshOverlay.hidden) return;
+          ++adeshOpenVersion;
+          adeshOverlay.hidden = true;
+          b.querySelector(".cob-modal").inert = false;
+          adeshButton.focus();
+        }
+        function topBodyBlock(element, body) {
+          let block = element;
+          while (block && block.parentElement !== body) block = block.parentElement;
+          return block;
+        }
+        function keepAdeshBelowBahas(body) {
+          const bahas = Array.from(body.querySelectorAll("[data-cob-bahas='1']"));
+          const adesh = Array.from(body.querySelectorAll("[data-cob-adesh='1']"));
+          if (!bahas.length || !adesh.length) return;
+          const anchorBlock = topBodyBlock(bahas[bahas.length - 1], body);
+          if (!anchorBlock) return;
+          let anchor = anchorBlock;
+          // Keep surrounding text in place; move only the imported आदेश paragraphs.
+          adesh.forEach(paragraph => { if (!paragraph.contains(anchorBlock)) { anchor.after(paragraph); anchor = paragraph; } });
+        }
+        function insertAdesh() {
+          const order = selectedAdesh();
+          const body = w.querySelector("[data-cob-main-body='1']");
+          if (!body || !order || !order.available || !order.text.trim()) return;
+          const fragment = document.createDocumentFragment();
+          order.text.replace(/\r/g, "").split(/\n+/).filter(part => part.trim()).forEach((part, index) => {
+            const template = document.createElement("template");
+            template.innerHTML = V(part.trim(), {firstLine: ["फैसला", "कसूर_सजाय"].includes(g.value)});
+            const paragraph = template.content.firstElementChild;
+            paragraph.dataset.cobAdesh = "1";
+            if (index === 0) {
+              paragraph.dataset.cobAdeshCategory = adeshCategory.value;
+              paragraph.dataset.cobAdeshOrder = order.id;
+            }
+            fragment.appendChild(paragraph);
+          });
+          const previous = Array.from(body.querySelectorAll("[data-cob-adesh='1']"));
+          const bahas = Array.from(body.querySelectorAll("[data-cob-bahas='1']"));
+          const lastBahas = bahas.length ? topBodyBlock(bahas[bahas.length - 1], body) : null;
+          const anchor = lastBahas ? lastBahas.nextSibling : (previous.length ? topBodyBlock(previous[0], body) : body.firstChild);
+          const onlyPlaceholder = body.children.length === 1 && body.textContent.trim() === "यहाँ आदेश वा फैसलाको व्यहोरा लेख्नुहोस्।";
+          if (onlyPlaceholder) body.replaceChildren(fragment);
+          else { body.insertBefore(fragment, anchor); previous.forEach(node => node.remove()); }
+          rememberAdeshState();
+          keepAdeshBelowBahas(body);
+          closeAdesh(); savedDraftRange = null;
+          w.dispatchEvent(new Event("input", {bubbles: true}));
+          w.focus();
+          body.querySelector("[data-cob-adesh='1']")?.scrollIntoView?.({block: "nearest", behavior: "smooth"});
+          adeshButton.textContent = "✓ आदेश समावेश भयो";
+          clearTimeout(adeshButton._confirmTimer);
+          adeshButton._confirmTimer = setTimeout(() => { adeshButton.textContent = "📄 आदेशसहित"; }, 1600);
+        }
+        adeshButton.addEventListener("click", openAdesh);
+        adeshCategory.addEventListener("change", () => { updateAdeshOrders(); rememberAdeshState(); });
+        adeshOrder.addEventListener("change", () => { updateAdeshText(); rememberAdeshState(); });
+        adeshExport.addEventListener("click", insertAdesh);
+        adeshOverlay.querySelector(".cob-bahas-close").addEventListener("click", closeAdesh);
+        adeshOverlay.querySelector("#cobAdeshCancel").addEventListener("click", closeAdesh);
+        adeshOverlay.addEventListener("click", event => { if (event.target === adeshOverlay) closeAdesh(); });
+        document.addEventListener("keydown", event => {
+          if (adeshOverlay.hidden) return;
+          if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); closeAdesh(); }
+          if (event.key === "Tab") {
+            const controls = Array.from(adeshOverlay.querySelectorAll("button,select,textarea")).filter(element => !element.disabled);
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+          }
+        }, true);
         const R = Array.isArray(t.judges) ? t.judges.slice() : [];
         function rememberDraftRange() {
           const selection = getSelection();
@@ -1322,6 +1475,7 @@
         }
         function re() {
           closeBahas();
+          closeAdesh();
           (setToolsOpen(!1),
             b.classList.remove("cob-open"),
             (document.body.style.overflow = ""),
@@ -1575,6 +1729,7 @@
               remarks: h.value,
               draftHtml: ee(w.innerHTML),
               bahasFormState: bahasFormState,
+              adeshFormState: adeshFormState,
               fontSize: Number(w.dataset.cobFontSize || 13),
               savedAt: new Date().toISOString(),
             };
@@ -1972,6 +2127,7 @@
                                   : "none"));
                           }
                           bahasFormState = bahasStates.get(A) || (n && n.bahasFormState) || null;
+                          adeshFormState = adeshStates.get(A) || (n && n.adeshFormState) || null;
                           ((savedDraftRange = null),
                             Z(),
                             Q(),
