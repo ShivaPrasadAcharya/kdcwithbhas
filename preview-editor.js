@@ -62,6 +62,13 @@
     const twips=mm=>Math.round(mm*1440/25.4);
     return {width:twips(size[0]),height:twips(size[1]),mmWidth:size[0],mmHeight:size[1],top:twips(l.top),right:twips(l.right),bottom:twips(l.bottom),left:twips(l.left),landscape:l.orientation==="landscape"};
   }
+  function mergeSelectionSpans(spans) {
+    const result=[];
+    spans.filter(s=>s&&Number.isFinite(s.start)&&Number.isFinite(s.end)&&s.start>=0&&s.end>s.start).map(s=>({start:s.start,end:s.end})).sort((a,b)=>a.start-b.start||a.end-b.end).forEach(s=>{
+      const previous=result.at(-1);if(previous&&s.start<=previous.end)previous.end=Math.max(previous.end,s.end);else result.push(s);
+    });
+    return result;
+  }
   function attach(options) {
     const draft=options.draft, panel=options.panel, backdrop=options.backdrop;
     if(!draft||!panel||draft.dataset.previewEditorReady)return null;
@@ -80,6 +87,7 @@
     Object.keys(initialStyles).forEach(k=>styles[k]=sanitizeStyle(styles[k]||initialStyles[k]));
     snippets=snippets.filter(s=>s&&typeof s.name==="string"&&typeof s.text==="string").map(s=>({name:s.name.slice(0,80),text:s.text.slice(0,20000)}));
     let layout=null, key="", lastRange=null, composing=false, restoring=false, history=[], historyIndex=-1, historyTimer, recoveryTimer, findResults=[], findIndex=-1, pendingDialog=null, lastRecovery="";
+    let retainedSelections=[],selectingWithCtrl=false;
     const status=document.createElement("p");
     status.className="pe-status";status.setAttribute("role","status");status.setAttribute("aria-live","polite");
     const toolbar=document.createElement("div");toolbar.className="pe-toolbar";toolbar.setAttribute("role","toolbar");toolbar.setAttribute("aria-label","Text formatting");
@@ -119,11 +127,16 @@
     },true);
     const cleanupSelect=document.createElement("select");
     cleanupSelect.className="pe-fact-cleanup";cleanupSelect.setAttribute("aria-label","Bold and strikethrough cleanup");
-    cleanupSelect.title="Apply to preview body text. Text removal can be undone. The last option removes text carrying bold, strikethrough, or both.";
+    cleanupSelect.title="Cleanup applies to body text. Selection actions apply only to selected text. Hold Ctrl while selecting more passages. All edits support Undo.";
     cleanupSelect.innerHTML='<option value="keep">Keep bold and strikethrough text</option><option value="unstrike">Remove strikes only (keep text)</option><option value="strike">Remove strikethrough text</option><option value="bold">Remove bold text</option><option value="both">Remove bold and strikethrough text</option>';
+    const selectionGroup=document.createElement("optgroup");selectionGroup.label="Selected text (Ctrl + select for multiple)";
+    [["selected-bold","Make selected text bold"],["selected-strike","Make selected text strikethrough"],["selected-both","Make selected text bold and strikethrough"],["selected-unbold","Remove bold from selected text"],["selected-unstrike","Remove strikethrough from selected text"]].forEach(([value,label])=>selectionGroup.append(new Option(label,value)));
+    cleanupSelect.append(selectionGroup);
+    cleanupSelect.addEventListener("pointerdown",saveRange);
     backdrop.querySelector("#cobAdesh")?.after(cleanupSelect);
     cleanupSelect.addEventListener("change",()=>{
       const mode=cleanupSelect.value;if(mode==="keep")return;
+      if(mode.startsWith("selected-")){formatSelected(mode);cleanupSelect.value="keep";return;}
       const body=draft.querySelector('[data-cob-main-body="1"]');
       if(!body){cleanupSelect.value="keep";return;}
       let removed=0;
@@ -193,6 +206,73 @@
     function styleForm(value) {const s=sanitizeStyle(value);Object.keys(s).forEach(k=>{const el=fieldNode(k);if(el)el.type==="checkbox"?el.checked=s[k]:el.value=s[k];});}
     function readStyle() {const s={};Object.keys(baseStyle).forEach(k=>{const el=fieldNode(k);s[k]=el.type==="checkbox"?el.checked:el.value;});return sanitizeStyle(s);}
     function saveRange() {const s=getSelection();if(s?.rangeCount&&draft.contains(s.getRangeAt(0).commonAncestorContainer))lastRange=s.getRangeAt(0).cloneRange();}
+    const selectionBadge=document.createElement("button");selectionBadge.type="button";selectionBadge.className="pe-selection-badge";selectionBadge.hidden=true;selectionBadge.title="Clear retained selections";toolbar.append(selectionBadge);
+    function clearSelections(){retainedSelections=[];selectionBadge.hidden=true;if(root.CSS?.highlights)root.CSS.highlights.delete("pe-selections");}
+    selectionBadge.addEventListener("click",()=>{clearSelections();lastRange=null;getSelection()?.removeAllRanges();tell("Retained selections cleared.");});
+    function offsetsForRange(range){
+      if(!range||range.collapsed||!draft.contains(range.commonAncestorContainer))return [];
+      let offset=0;const spans=[];
+      textNodes(draft).forEach(n=>{if(range.intersectsNode(n)){const start=n===range.startContainer?range.startOffset:0,end=n===range.endContainer?range.endOffset:n.length;if(end>start)spans.push({start:offset+start,end:offset+end});}offset+=n.length;});
+      return mergeSelectionSpans(spans);
+    }
+    function currentSelections(){
+      const selection=getSelection(),spans=[];
+      if(selection)for(let i=0;i<selection.rangeCount;i++)spans.push(...offsetsForRange(selection.getRangeAt(i)));
+      if(!spans.length)spans.push(...offsetsForRange(lastRange));
+      return mergeSelectionSpans(spans);
+    }
+    function showSelections(){
+      selectionBadge.hidden=!retainedSelections.length;selectionBadge.textContent=retainedSelections.length+" selections ×";
+      if(root.CSS?.highlights&&root.Highlight){const nodes=textNodes(draft),ranges=retainedSelections.map(s=>rangeFromOffsets(nodes,s.start,s.end)).filter(Boolean);root.CSS.highlights.set("pe-selections",new root.Highlight(...ranges));}
+    }
+    draft.addEventListener("pointerdown",e=>{
+      selectingWithCtrl=e.ctrlKey||e.metaKey;
+      if(selectingWithCtrl){retainedSelections=mergeSelectionSpans([...retainedSelections,...currentSelections()]);showSelections();}
+      else clearSelections();
+    });
+    document.addEventListener("pointerup",()=>{
+      if(!selectingWithCtrl)return;selectingWithCtrl=false;saveRange();
+      retainedSelections=mergeSelectionSpans([...retainedSelections,...currentSelections()]);showSelections();
+      tell(retainedSelections.length+" selections retained. Choose a Selected text action in the top dropdown.");
+    });
+    function effectiveDecorations(element){const lines=new Set();for(let p=element;p&&draft.contains(p);p=p.parentElement)getComputedStyle(p).textDecorationLine.split(" ").filter(l=>l!=="none").forEach(l=>lines.add(l));return lines;}
+    function formatSelected(mode){
+      const spans=mergeSelectionSpans([...retainedSelections,...currentSelections()]);
+      if(!spans.length){tell("पहिले text छान्नुहोस्। Ctrl थिचेर थप text छान्न सकिन्छ।");return;}
+      let offset=0;const parts=[];
+      textNodes(draft).forEach(n=>{
+        const next=offset+n.length,computed=getComputedStyle(n.parentElement),style={};
+        ["fontFamily","fontSize","fontWeight","fontStyle","color","backgroundColor","verticalAlign"].forEach(k=>style[k]=computed[k]);
+        const lines=effectiveDecorations(n.parentElement);
+        if(mode==="selected-bold"||mode==="selected-both")style.fontWeight="700";
+        if(mode==="selected-unbold")style.fontWeight="400";
+        if(mode==="selected-strike"||mode==="selected-both")lines.add("line-through");
+        if(mode==="selected-unstrike")lines.delete("line-through");
+        style.textDecoration=Array.from(lines).join(" ")||"none";
+        spans.forEach(s=>{const start=Math.max(0,s.start-offset),end=Math.min(n.length,s.end-offset);if(end>start)parts.push({node:n,start,end,style:Object.assign({},style)});});offset=next;
+      });
+      transact(()=>{
+        if(mode==="selected-unstrike"){
+          // A paragraph's decoration cannot be cancelled by a child span. Move
+          // it onto its text runs first, preserving unselected struck words.
+          const containers=new Set();parts.forEach(part=>{for(let p=blockFor(part.node)||draft;p&&draft.contains(p);p=p.parentElement)if(getComputedStyle(p).textDecorationLine.includes("line-through"))containers.add(p);});
+          const struck=new Set();containers.forEach(p=>textNodes(p).forEach(n=>{if(effectiveDecorations(n.parentElement).has("line-through"))struck.add(n);}));
+          containers.forEach(p=>{p.style.textDecorationLine=getComputedStyle(p).textDecorationLine.split(" ").filter(l=>l!=="line-through").join(" ")||"none";});
+          struck.forEach(n=>{const span=document.createElement("span");span.style.textDecoration="line-through";n.before(span);span.append(n);});
+        }
+        parts.reverse().forEach(part=>{
+          const n=part.node;if(part.end<n.length)n.splitText(part.end);const selected=part.start?n.splitText(part.start):n;
+          const boundary=selected.parentElement.closest(".cob-party-name,.cob-party-role,[data-pe-tab]")||blockFor(selected)||draft;
+          const span=document.createElement("span");Object.assign(span.style,part.style);selected.before(span);span.append(selected);
+          while(span.parentElement!==boundary){
+            const parent=span.parentElement,after=parent.cloneNode(false);after.removeAttribute("id");
+            while(span.nextSibling)after.append(span.nextSibling);
+            parent.after(span);if(after.childNodes.length)span.after(after);if(!parent.childNodes.length)parent.remove();
+          }
+        });
+      });
+      clearSelections();tell("Selected text formatting applied. Undo is available.");
+    }
     function activeRange() {
       saveRange();
       if(lastRange&&draft.contains(lastRange.commonAncestorContainer))return lastRange.cloneRange();
@@ -246,6 +326,7 @@
       printStyle.textContent=layout?"@page {size:"+layout.paper+" "+layout.orientation+";margin:"+layout.top+"mm "+layout.right+"mm "+layout.bottom+"mm "+layout.left+"mm;}":"";
     }
     function restoreSnapshot(s) {
+      clearSelections();
       restoring=true;options.restoreState(s.state);applyLayout(s.layout);viewPreferences();draft.dispatchEvent(new Event("input",{bubbles:true}));restoring=false;restoreBookmark(s.caret);findResults=[];clearHighlights();scheduleRecovery();
     }
     function undo(delta) {rememberHistory();const target=historyIndex+delta;if(target<0||target>=history.length)return;historyIndex=target;restoreSnapshot(history[target]);updateUndo();tell(delta<0?"Undo":"Redo");}
@@ -436,12 +517,12 @@
     function scheduleRecovery(){clearTimeout(recoveryTimer);if(settings.recovery&&key)recoveryTimer=setTimeout(()=>saveVersion("Automatic recovery"),settings.interval*1000);}
     function visibleText(html) {const template=document.createElement("template");template.innerHTML=options.sanitize(html);return Array.from(template.content.querySelectorAll("p,li,h1,h2,h3")).map(p=>p.textContent).join("\n");}
     function open(keyValue,stored) {
-      clearTimeout(historyTimer);clearTimeout(recoveryTimer);key=keyValue;lastRange=null;history=[];historyIndex=-1;lastRecovery="";findResults=[];clearHighlights();
+      clearTimeout(historyTimer);clearTimeout(recoveryTimer);clearSelections();key=keyValue;lastRange=null;history=[];historyIndex=-1;lastRecovery="";findResults=[];clearHighlights();
       applyLayout(stored?.previewLayout||null);viewPreferences();updateTabs();rememberHistory();versionList();tell("");
       const last=versions().at(-1);
       if(last&&(!stored?.savedAt||new Date(last.time)>new Date(stored.savedAt)))tell("A newer recovery version is available in Tools → Recovery versions.");
     }
-    function close(){if(key&&settings.recovery)saveVersion("Before closing");clearTimeout(historyTimer);clearTimeout(recoveryTimer);pendingDialog?.close(null);leaveFullscreen();cleanupSelect.value="keep";key="";lastRange=null;clearHighlights();}
+    function close(){if(key&&settings.recovery)saveVersion("Before closing");clearTimeout(historyTimer);clearTimeout(recoveryTimer);pendingDialog?.close(null);leaveFullscreen();cleanupSelect.value="keep";clearSelections();key="";lastRange=null;clearHighlights();}
     section.addEventListener("change",e=>{
       if(e.target.matches("[data-pe-pref]")){
         const pref=e.target.dataset.pePref;settings[pref]=e.target.type==="checkbox"?e.target.checked:typeof defaults[pref]==="number"?clamp(e.target.value,pref==="retain"?2:pref==="tabWidth"?1:10,pref==="retain"?30:pref==="tabWidth"?12:300,defaults[pref]):e.target.value;
@@ -482,6 +563,7 @@
     draft.addEventListener("compositionstart",()=>composing=true);
     draft.addEventListener("compositionend",()=>{composing=false;rememberHistory();scheduleRecovery();});
     draft.addEventListener("input",()=>{
+      clearSelections();
       updateTabs();if(restoring)return;clearHighlights();findResults=[];showCount();
       clearTimeout(historyTimer);if(!composing)historyTimer=setTimeout(rememberHistory,350);
       scheduleRecovery();
@@ -534,7 +616,7 @@
     refreshSnippets();styleForm(styles.normal);viewPreferences();updateUndo();
     return {open,close,getLayout:()=>layout?Object.assign({},layout):null,reviewImport,orderParagraphs,imported:markImported,checkpoint:rememberHistory,refresh:()=>{applyLayout(layout);viewPreferences();updateTabs();},saveVersion};
   }
-  const api={attach,findOffsets,sanitizeStyle,sanitizeLayout,pageGeometry,normalized};
+  const api={attach,findOffsets,sanitizeStyle,sanitizeLayout,pageGeometry,normalized,mergeSelectionSpans};
   root.COBPreviewEnhancements=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);

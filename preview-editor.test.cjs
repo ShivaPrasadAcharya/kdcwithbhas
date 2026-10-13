@@ -12,6 +12,11 @@ assert.deepEqual(editor.findOffsets("राम तथा राम", "राम"
 assert.deepEqual(editor.findOffsets("राम", "", true), []);
 assert.deepEqual(editor.findOffsets("राम", "शिव", true), []);
 
+// Overlapping/native multi-ranges must never format the same characters twice;
+// gaps between independent Ctrl selections must stay unselected.
+assert.deepEqual(editor.mergeSelectionSpans([{start:12,end:17},{start:0,end:5},{start:0,end:5},{start:2,end:4}]),[{start:0,end:5},{start:12,end:17}]);
+assert.deepEqual(editor.mergeSelectionSpans([{start:0,end:3},{start:2,end:7},{start:7,end:9},{start:10,end:10},{start:-1,end:3}]),[{start:0,end:9}]);
+
 // Custom settings are bounded, but valid user preferences survive.
 const style = editor.sanitizeStyle({font:"Nirmala UI",size:16,line:1.5,left:24,right:12,first:-18,tabs:"72,36,72,-5,10000",color:"#123456",keepNext:true});
 assert.equal(style.font,"Nirmala UI"); assert.equal(style.first,-18);
@@ -56,7 +61,7 @@ for(const format of ["<w:b/>","<w:i/>",'<w:u w:val="single"/>',"<w:strike/>"])as
 assert.ok(nestedXml.includes("सबै ढाँचा"));
 const index=fs.readFileSync("index.html","utf8");
 assert.ok(index.indexOf('editorRuntime.async = false')<index.indexOf('runtime.async = false'));
-assert.ok(index.includes('preview-editor.js?v=4'));
+assert.ok(index.includes('preview-editor.js?v=5'));
 assert.ok(source.includes('previewEnhancer?.open(A,n)'));
 assert.ok(source.includes('previewEnhancer.reviewImport("bahas"'));
 assert.ok(source.includes('previewEnhancer.reviewImport("adesh"'));

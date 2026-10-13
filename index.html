@@ -2874,7 +2874,7 @@
         const editorStyle = doc.createElement("link");
         editorStyle.id = "preview-editor-style";
         editorStyle.rel = "stylesheet";
-        editorStyle.href = "preview-editor.css?v=5";
+        editorStyle.href = "preview-editor.css?v=6";
         head.appendChild(editorStyle);
         const syncStyle = doc.createElement("link");
         syncStyle.id = "cause-list-firebase-sync-style";
@@ -2899,7 +2899,7 @@
         const editorRuntime = doc.createElement("script");
         editorRuntime.id = "preview-editor-runtime";
         editorRuntime.async = false;
-        editorRuntime.src = "preview-editor.js?v=4";
+        editorRuntime.src = "preview-editor.js?v=5";
         (doc.body || doc.documentElement).appendChild(editorRuntime);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";

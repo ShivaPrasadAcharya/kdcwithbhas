@@ -68,3 +68,7 @@
 .pe-fullscreen-preview .cob-tools-panel{right:60px}
 @media(max-width:700px){.cob-head h2{flex:1;font-size:16px}.cob-head .cob-import-actions{order:2;width:100%}.pe-fact-cleanup{flex:1;min-width:175px}.pe-fullscreen-preview .cob-actions{right:10px}.pe-fullscreen-preview .cob-tools-panel{right:10px}}
 @media print{.cob-backdrop.pe-fullscreen-preview,.cob-backdrop:fullscreen,.pe-fullscreen-preview>.cob-modal,.cob-backdrop:fullscreen>.cob-modal{width:auto!important;height:auto!important;max-height:none!important}}
+
+::highlight(pe-selections){background:#b8dcff;color:inherit}
+.pe-selection-badge{color:#184c81!important;border-color:#6da4d0!important;background:#edf6ff!important}
+.pe-selection-badge[hidden]{display:none!important}

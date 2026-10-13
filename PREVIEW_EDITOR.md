@@ -35,3 +35,9 @@ The dropdown beside **आदेशसहित** defaults to **Keep bold and str
 - **Remove bold and strikethrough text:** delete words shown in bold, strikethrough, or both.
 
 These actions preserve the document header, party block, signature, numbering markers and the catalog source. Undo restores the edited preview. DOCX export follows the resulting formatting and text.
+
+## Selected text formatting
+
+The top bold/strikethrough dropdown also offers: make selected text bold, make it strikethrough, apply both, remove bold, or remove strikethrough. These five actions apply only to selected characters, preserve the words and other formatting, and support Undo/Redo and DOCX export. Without a nonempty selection, they make no changes.
+
+For multiple passages, select the first passage normally, then hold **Ctrl** while selecting additional passages (Command works on Mac). Earlier selections remain highlighted; the toolbar shows a selection count and a clear button. Choose one of the dropdown's **Selected text** actions to format all retained passages together. A normal new selection, editing, Undo/Redo, or closing the preview clears retained selections.
