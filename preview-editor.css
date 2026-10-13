@@ -54,3 +54,5 @@
 .cob-adesh-rich-preview{min-height:180px;max-height:320px;overflow:auto;box-sizing:border-box;padding:14px;border:1px solid #d2c6bd;border-radius:8px;color:#222;background:#fff;font:15px/1.8 "Noto Sans Devanagari","Nirmala UI",sans-serif;white-space:pre-wrap}
 .cob-adesh-rich-preview p{margin:0 0 8px}
 .cob-adesh-rich-preview[hidden],#cobAdeshText[hidden]{display:none!important}
+
+.cob-adesh-footer .cob-copy-success{color:#13783a;border-color:#13783a;background:#edf8ef}

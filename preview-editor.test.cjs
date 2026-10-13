@@ -41,10 +41,23 @@ for(const expected of [
   'w:before="120"','w:after="60"','w:left="480"','w:right="240"','w:hanging="360"'
 ]) assert.ok(xml.includes(expected),expected+" absent in "+xml);
 fs.writeFileSync(".preview-test-paragraph.xml",'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+xml+'</w:body></w:document>');
+// Decorations are not inherited in computed styles. The serializer must follow
+// ancestor tags so nested B/U/I/S retain every format in a single Word run.
+const paragraph={nodeType:1,tagName:"P",dataset:{},parentElement:null,matches:()=>false,querySelector:()=>null,closest:selector=>selector.includes("cob-main-body")?paragraph:null};
+let parent=paragraph;
+for(const tag of ["B","U","I","S"]){const child={nodeType:1,tagName:tag,dataset:{},parentElement:parent,matches:()=>false,closest:()=>null};parent.childNodes=[child];parent=child;}
+parent.childNodes=[{nodeType:3,nodeValue:"सबै ढाँचा",parentElement:parent}];
+context.getComputedStyle=node=>{
+  const ancestors=[];for(let p=node;p;p=p.parentElement)ancestors.push(p.tagName);
+  return Object.assign({},computed,{fontWeight:ancestors.includes("B")?"700":"400",fontStyle:ancestors.includes("I")?"italic":"normal",textDecorationLine:node.tagName==="U"?"underline":node.tagName==="S"?"line-through":"none"});
+};
+const nestedXml=context.serialize(paragraph);
+for(const format of ["<w:b/>","<w:i/>",'<w:u w:val="single"/>',"<w:strike/>"])assert.ok(nestedXml.includes(format),format+" missing for nested catalog tags");
+assert.ok(nestedXml.includes("सबै ढाँचा"));
 const index=fs.readFileSync("index.html","utf8");
 assert.ok(index.indexOf('editorRuntime.async = false')<index.indexOf('runtime.async = false'));
-assert.ok(index.includes('preview-editor.js?v=2'));
+assert.ok(index.includes('preview-editor.js?v=3'));
 assert.ok(source.includes('previewEnhancer?.open(A,n)'));
 assert.ok(source.includes('previewEnhancer.reviewImport("bahas"'));
 assert.ok(source.includes('previewEnhancer.reviewImport("adesh"'));
-console.log("Passed normalized-search mapping, customization bounds, page geometry, and DOCX formatting checks.");
+console.log("Passed normalized-search mapping, customization bounds, page geometry, and DOCX formatting checks (including nested B/U/I/S).");

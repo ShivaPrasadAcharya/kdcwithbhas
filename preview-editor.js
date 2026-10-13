@@ -111,7 +111,7 @@
       '</div><div class="pe-buttons"><button type="button" data-pe-action="apply-layout">Apply page layout</button><button type="button" data-pe-action="reset-layout">Original layout</button><button type="button" data-pe-action="page-break">Page break before paragraph</button><button type="button" data-pe-action="remove-break">Remove page break</button><button type="button" data-pe-action="keep-group">Keep selected paragraphs together</button></div><small>Margins, page breaks and keep options are included in DOCX. Automatic page flow is determined by Word or your print browser.</small></details>',
       '<details class="pe-section"><summary>Reusable text snippets</summary><div class="pe-fields"><label class="pe-full">Saved snippets<select data-pe-field="snippet"></select></label>'+field("snippetName","Name","text","")+'<label class="pe-full">Text<textarea data-pe-field="snippetText" rows="4" placeholder="तपाईंको नियमित प्रयोग हुने व्यहोरा"></textarea></label></div><div class="pe-buttons"><button type="button" data-pe-action="insert-snippet">Insert at cursor</button><button type="button" data-pe-action="save-snippet">Save snippet</button><button type="button" data-pe-action="remove-snippet">Remove snippet</button></div></details>',
       '<details class="pe-section"><summary>Recovery versions</summary><label>Saved versions<select data-pe-field="version"></select></label><div class="pe-buttons"><button type="button" data-pe-action="snapshot">Save version now</button><button type="button" data-pe-action="compare-version">Compare</button><button type="button" data-pe-action="restore-version">Restore</button></div><small id="peRecoveryNote">Recovery versions are kept in this browser, separately for each case.</small></details>',
-      '<details class="pe-section"><summary>Customize editor</summary><div class="pe-fields"><label class="pe-check"><input data-pe-pref="toolbar" type="checkbox">Compact formatting toolbar</label><label class="pe-check"><input data-pe-pref="marks" type="checkbox">Show ¶ and tab marks</label><label class="pe-check"><input data-pe-pref="askPaste" type="checkbox">Ask how to paste</label><label>Default paste<select data-pe-pref="pasteMode"><option value="match">Match document</option><option value="keep">Keep formatting</option><option value="plain">Plain text</option></select></label><label class="pe-check"><input data-pe-pref="recovery" type="checkbox">Automatic recovery versions</label>'+'<label>Save after idle (seconds)<input data-pe-pref="interval" type="number" min="10" max="300"></label><label>Versions per case<input data-pe-pref="retain" type="number" min="2" max="30"></label><label>Tab width (spaces)<input data-pe-pref="tabWidth" type="number" min="1" max="12"></label><label>Review imports<select data-pe-pref="review"><option value="changed">When text was edited</option><option value="always">Every re-import</option></select></label></div><small>Ctrl+B/I/U: formatting · Ctrl+Z/Y: undo/redo · Ctrl+F/H: find/replace · Ctrl+S: Save · Enter: new paragraph · Tab: insert tab.</small></details>'
+      '<details class="pe-section"><summary>Customize editor</summary><div class="pe-fields"><label class="pe-check"><input data-pe-pref="toolbar" type="checkbox">Compact formatting toolbar</label><label class="pe-check"><input data-pe-pref="marks" type="checkbox">Show ¶ and tab marks</label><label class="pe-check"><input data-pe-pref="askPaste" type="checkbox">Ask how to paste</label><label>Default paste<select data-pe-pref="pasteMode"><option value="match">Paste as destination formatting</option><option value="keep">Paste as source formatting</option><option value="plain">Paste as text</option></select></label><label class="pe-check"><input data-pe-pref="recovery" type="checkbox">Automatic recovery versions</label>'+'<label>Save after idle (seconds)<input data-pe-pref="interval" type="number" min="10" max="300"></label><label>Versions per case<input data-pe-pref="retain" type="number" min="2" max="30"></label><label>Tab width (spaces)<input data-pe-pref="tabWidth" type="number" min="1" max="12"></label><label>Review imports<select data-pe-pref="review"><option value="changed">When text was edited</option><option value="always">Every re-import</option></select></label></div><small>Ctrl+B/I/U: formatting · Ctrl+Z/Y: undo/redo · Ctrl+F/H: find/replace · Ctrl+S: Save · Enter: new paragraph · Tab: insert tab.</small></details>'
     ].join("");
     panel.querySelector(".cob-tools-status").before(section);
     const continuation=document.createElement("button");continuation.type="button";continuation.textContent="Continue previous numbering";continuation.addEventListener("mousedown",e=>e.preventDefault());continuation.addEventListener("click",()=>transact(()=>options.continueNumbering?.()));
@@ -306,8 +306,15 @@
     function orderParagraphs(text,preserveFormatting=true) {
       const source=String(text||"").replace(/\r/g,"");
       const rich=/<\/?(?:b|strong|i|em|u|s|sup|sub|span|br|p|div|h[1-6]|blockquote|li|ul|ol)\b[^>]*>/i.test(source);
-      const blocks=rich&&/<\/?(?:p|div|h[1-6]|blockquote|li|ul|ol)\b/i.test(source);
-      const paragraphs=rich?(blocks?sanitizedPaste(source,"keep",""):source.split("\n").flatMap(line=>sanitizedPaste(line,"keep",""))):source.split("\n").map(newParagraph);
+      const paragraphs=rich?sanitizedPaste(source,"keep","").flatMap(p=>{
+        // Split actual catalog newlines without losing formatting that spans them.
+        const walker=document.createTreeWalker(p,NodeFilter.SHOW_TEXT),nodes=[];let node;
+        while((node=walker.nextNode()))nodes.push(node);
+        const range=document.createRange(),parts=[];range.setStart(p,0);
+        function appendPart(){const part=p.cloneNode(false);part.append(range.cloneContents());parts.push(part);}
+        nodes.forEach(n=>{for(let i=0;i<n.nodeValue.length;i++)if(n.nodeValue[i]==="\n"){range.setEnd(n,i);appendPart();range.setStart(n,i+1);}});
+        range.setEnd(p,p.childNodes.length);appendPart();return parts;
+      }):source.split("\n").map(newParagraph);
       return paragraphs.filter(p=>p.textContent.trim()).map(p=>preserveFormatting?p:newParagraph(p.textContent));
     }
     function dialog(title, build, actions) {
@@ -440,14 +447,22 @@
       if(!e.clipboardData)return;e.preventDefault();if(composing)return;
       const text=e.clipboardData.getData("text/plain"),html=e.clipboardData.getData("text/html"),range=activeRange();
       if(!range)return;
+      const destination=blockFor(range.startContainer),at=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;
+      const destinationStyle=at&&getComputedStyle(at),inlineStyle={};
+      if(destinationStyle)["fontFamily","fontSize","fontWeight","fontStyle","textDecoration","color","backgroundColor","verticalAlign"].forEach(k=>{inlineStyle[k]=destinationStyle[k];});
+      // Underline and strike decorations can be set on an ancestor of the cursor.
+      let decorated=at;const decorations=new Set();
+      while(decorated&&draft.contains(decorated)){getComputedStyle(decorated).textDecorationLine.split(" ").filter(v=>v!=="none").forEach(v=>decorations.add(v));decorated=decorated.parentElement;}
+      inlineStyle.textDecoration=Array.from(decorations).join(" ")||"none";
       let mode=settings.pasteMode;
       if(settings.askPaste)mode=await dialog("Paste options",card=>{const p=document.createElement("p");p.textContent="Choose how this text should appear in your document.";card.append(p);},[
-        {label:"Match document formatting",value:"match",primary:true},{label:"Keep formatting",value:"keep"},{label:"Plain text",value:"plain"},{label:"Cancel",value:null}
+        {label:"Paste as text",value:"plain"},{label:"Paste as source formatting",value:"keep"},{label:"Paste as destination formatting",value:"match",primary:true},{label:"Cancel",value:null}
       ]);
       if(!mode)return;
       transact(()=>{
         const paragraphs=sanitizedPaste(html,mode,text);
-        if(mode!=="keep"){const source=blockFor(range.startContainer);paragraphs.forEach(p=>{if(source)p.style.cssText=source.style.cssText;});}
+        if(mode!=="keep")paragraphs.forEach(p=>{if(destination)p.style.cssText=destination.style.cssText;});
+        if(mode==="match")paragraphs.forEach(p=>{const span=document.createElement("span");Object.assign(span.style,inlineStyle);span.append(...Array.from(p.childNodes));p.append(span);});
         insertParagraphs(paragraphs,range);
       });tell("Pasted with "+mode+" formatting.");
     },true);

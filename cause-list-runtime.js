@@ -372,6 +372,12 @@
         adeshText.after(adeshRichPreview);
         const adeshStatus = adeshOverlay.querySelector("#cobAdeshStatus");
         const adeshExport = adeshOverlay.querySelector("#cobAdeshExport");
+        const adeshCopy = document.createElement("button");
+        adeshCopy.type = "button";
+        adeshCopy.className = "cob-btn";
+        adeshCopy.textContent = "Copy आदेश";
+        adeshCopy.disabled = true;
+        adeshExport.before(adeshCopy);
         function selectedAdesh() {
           const category = adeshCatalog?.categories.find(item => item.id === adeshCategory.value);
           return category?.orders.find(item => item.id === adeshOrder.value) || null;
@@ -389,6 +395,7 @@
           adeshRichPreview.hidden = !rich;
           adeshRichPreview.replaceChildren(...paragraphs);
           adeshExport.disabled = !order || !order.available || !order.text.trim();
+          adeshCopy.disabled = adeshExport.disabled;
           adeshStatus.textContent = order && !order.available ? (order.message || "यो आदेशको व्यहोरा खाली छ। अर्को आदेश छान्नुहोस्।") : "";
         }
         function updateAdeshOrders(orderId) {
@@ -420,7 +427,7 @@
           const version = ++adeshOpenVersion;
           adeshOverlay.hidden = false;
           b.querySelector(".cob-modal").inert = true;
-          adeshCategory.disabled = true; adeshOrder.disabled = true; adeshExport.disabled = true;
+          adeshCategory.disabled = true; adeshOrder.disabled = true; adeshExport.disabled = true; adeshCopy.disabled = true;
           adeshText.value = ""; adeshText.hidden = false; adeshRichPreview.hidden = true; adeshStatus.textContent = "आदेशको सूची ल्याउँदैछ…";
           adeshOverlay.querySelector("#cobAdeshContext").textContent = m(T.rawCase).caseNo + " · " + bahasRoles().join(" / ");
           adeshOverlay.querySelector(".cob-bahas-close").focus();
@@ -513,6 +520,41 @@
         adeshCategory.addEventListener("change", () => { updateAdeshOrders(); rememberAdeshState(); });
         adeshOrder.addEventListener("change", () => { updateAdeshText(); rememberAdeshState(); });
         adeshFormatting.addEventListener("change", () => { updateAdeshText(); rememberAdeshState(); });
+        adeshCopy.addEventListener("click", async () => {
+          const order = selectedAdesh();
+          if (!order || adeshCopy.disabled) return;
+          const box = document.createElement("div");
+          const paragraphs = previewEnhancer ? previewEnhancer.orderParagraphs(order.text, adeshFormatting.checked) : [];
+          box.append(...paragraphs);
+          const text = paragraphs.length ? paragraphs.map(p => p.textContent).join("\n") : order.text;
+          let copied = false;
+          if (navigator.clipboard?.write && window.ClipboardItem) {
+            try {
+              const payload = {"text/plain": new Blob([text], {type: "text/plain"})};
+              if (adeshFormatting.checked && paragraphs.length) payload["text/html"] = new Blob([box.innerHTML], {type: "text/html"});
+              await navigator.clipboard.write([new ClipboardItem(payload)]);
+              copied = true;
+            } catch (_) {}
+          }
+          if (!copied) {
+            // Selecting a rendered, sanitized passage also supports rich copy in older browsers.
+            const selection = getSelection(), ranges = selection ? Array.from({length: selection.rangeCount}, (_, i) => selection.getRangeAt(i).cloneRange()) : [];
+            box.style.cssText = "position:fixed;left:-10000px;top:0;white-space:pre-wrap";
+            if (!paragraphs.length) box.textContent = text;
+            adeshOverlay.append(box);
+            const range = document.createRange(); range.selectNodeContents(box);
+            try { selection.removeAllRanges(); selection.addRange(range); copied = document.execCommand("copy"); } catch (_) {}
+            box.remove();
+            if (selection) { selection.removeAllRanges(); ranges.forEach(r => selection.addRange(r)); }
+            adeshCopy.focus();
+          }
+          if (!copied) { adeshStatus.textContent = "Copy गर्न सकिएन। आदेशको preview छानेर Ctrl+C गर्नुहोस्।"; return; }
+          adeshCopy.textContent = "✓ Copied";
+          adeshCopy.classList.add("cob-copy-success");
+          adeshStatus.textContent = adeshFormatting.checked ? "आदेश formatting सहित copy भयो।" : "आदेश text copy भयो।";
+          clearTimeout(adeshCopy._confirmTimer);
+          adeshCopy._confirmTimer = setTimeout(() => { adeshCopy.textContent = "Copy आदेश"; adeshCopy.classList.remove("cob-copy-success"); }, 1800);
+        });
         adeshExport.addEventListener("click", insertAdesh);
         adeshOverlay.querySelector(".cob-bahas-close").addEventListener("click", closeAdesh);
         adeshOverlay.querySelector("#cobAdeshCancel").addEventListener("click", closeAdesh);
