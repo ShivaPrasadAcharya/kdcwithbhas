@@ -11,7 +11,7 @@ Open **आदेश बनाउनुहोस्**, then **Tools**.
 
 Paste can retain supported text/paragraph formatting, match the document, or use plain text. Active content, images and external embeds are removed. Pasted tables are converted to text paragraphs.
 
-Re-importing बहस or आदेश checks for manual text and formatting edits. Review the current/proposed text before replacing an edited import. Keep current text cancels replacement; the proposed passage can be edited before applying. The आदेश stays below बहस.
+Re-importing बहस or आदेश checks for manual text and formatting edits. Review the current/proposed text before replacing an edited import. Keep current text cancels replacement; the proposed passage can be edited before applying. The आदेश stays below बहस. In the आदेश picker, **आदेशको मूल formatting राख्नुहोस्** retains supported source formatting (including bold names). Uncheck it to import plain text. The selection preview displays the chosen formatting, and accepting unchanged proposed text during review preserves it.
 
 Numbering supports existing English styles plus १, १.१ and क. Choose a custom start value to restart, or **Continue previous numbering** to join the preceding sequence.
 

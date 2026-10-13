@@ -2874,7 +2874,7 @@
         const editorStyle = doc.createElement("link");
         editorStyle.id = "preview-editor-style";
         editorStyle.rel = "stylesheet";
-        editorStyle.href = "preview-editor.css?v=1";
+        editorStyle.href = "preview-editor.css?v=2";
         head.appendChild(editorStyle);
         const syncStyle = doc.createElement("link");
         syncStyle.id = "cause-list-firebase-sync-style";
@@ -2899,13 +2899,13 @@
         const editorRuntime = doc.createElement("script");
         editorRuntime.id = "preview-editor-runtime";
         editorRuntime.async = false;
-        editorRuntime.src = "preview-editor.js?v=1";
+        editorRuntime.src = "preview-editor.js?v=2";
         (doc.body || doc.documentElement).appendChild(editorRuntime);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";
         runtime.async = false;
-        runtime.setAttribute("data-version", "preview-editor-1");
-        runtime.src = "cause-list-runtime.js?v=preview-editor-1";
+        runtime.setAttribute("data-version", "preview-editor-2");
+        runtime.src = "cause-list-runtime.js?v=preview-editor-2";
         (doc.body || doc.documentElement).appendChild(runtime);
         const proofreaderRuntime = doc.createElement("script");
         proofreaderRuntime.id = "nepali-proofreader-engine-runtime";

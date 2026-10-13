@@ -43,7 +43,7 @@ for(const expected of [
 fs.writeFileSync(".preview-test-paragraph.xml",'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+xml+'</w:body></w:document>');
 const index=fs.readFileSync("index.html","utf8");
 assert.ok(index.indexOf('editorRuntime.async = false')<index.indexOf('runtime.async = false'));
-assert.ok(index.includes('preview-editor.js?v=1'));
+assert.ok(index.includes('preview-editor.js?v=2'));
 assert.ok(source.includes('previewEnhancer?.open(A,n)'));
 assert.ok(source.includes('previewEnhancer.reviewImport("bahas"'));
 assert.ok(source.includes('previewEnhancer.reviewImport("adesh"'));

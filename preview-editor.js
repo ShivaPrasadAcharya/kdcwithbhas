@@ -303,6 +303,13 @@
       Array.from(template.content.childNodes).forEach(visit);flush();
       return output.length?output:String(text||"").split("\n").map(newParagraph);
     }
+    function orderParagraphs(text,preserveFormatting=true) {
+      const source=String(text||"").replace(/\r/g,"");
+      const rich=/<\/?(?:b|strong|i|em|u|s|sup|sub|span|br|p|div|h[1-6]|blockquote|li|ul|ol)\b[^>]*>/i.test(source);
+      const blocks=rich&&/<\/?(?:p|div|h[1-6]|blockquote|li|ul|ol)\b/i.test(source);
+      const paragraphs=rich?(blocks?sanitizedPaste(source,"keep",""):source.split("\n").flatMap(line=>sanitizedPaste(line,"keep",""))):source.split("\n").map(newParagraph);
+      return paragraphs.filter(p=>p.textContent.trim()).map(p=>preserveFormatting?p:newParagraph(p.textContent));
+    }
     function dialog(title, build, actions) {
       if(pendingDialog)return Promise.resolve(null);
       const overlay=document.createElement("div");overlay.className="pe-dialog-backdrop";
@@ -339,9 +346,10 @@
       const current=importedText(kind);let baseline=null,formatBaseline=null;try{baseline=decodeURIComponent(first.dataset.cobImportBaseline||"");formatBaseline=decodeURIComponent(first.dataset.cobImportFormat||"");}catch(_){}
       if(settings.review==="changed"&&baseline&&formatBaseline&&current===baseline&&importedHtml(kind)===formatBaseline)return incoming;
       saveVersion("Before "+kind+" re-import");
-      return dialog((kind==="bahas"?"बहस":"आदेश")+" — review before replacing",card=>comparison(card,current,incoming,true),[
+      const proposed=kind==="adesh"?orderParagraphs(incoming).map(p=>p.textContent).join("\n"):incoming;
+      return dialog((kind==="bahas"?"बहस":"आदेश")+" — review before replacing",card=>comparison(card,current,proposed,true),[
         {label:"Keep current text",value:null},
-        {label:"Replace with proposed text",primary:true,value:card=>card.querySelector("[data-pe-proposed]").value}
+        {label:"Replace with proposed text",primary:true,value:card=>{const edited=card.querySelector("[data-pe-proposed]").value;return edited===proposed?incoming:edited;}}
       ]);
     }
     function versions() {try{const v=JSON.parse(localStorage.getItem(key+":recovery:v1")||"[]");return Array.isArray(v)?v.filter(x=>x&&x.snapshot?.state?.draftHtml).slice(-30):[];}catch(_){return [];}}
@@ -446,7 +454,7 @@
     document.addEventListener("visibilitychange",()=>{if(document.hidden&&settings.recovery&&key)saveVersion("Automatic recovery");});
     root.addEventListener("pagehide",()=>{if(settings.recovery&&key)saveVersion("Before leaving");});
     refreshSnippets();styleForm(styles.normal);viewPreferences();updateUndo();
-    return {open,close,getLayout:()=>layout?Object.assign({},layout):null,reviewImport,imported:markImported,checkpoint:rememberHistory,refresh:()=>{applyLayout(layout);viewPreferences();updateTabs();},saveVersion};
+    return {open,close,getLayout:()=>layout?Object.assign({},layout):null,reviewImport,orderParagraphs,imported:markImported,checkpoint:rememberHistory,refresh:()=>{applyLayout(layout);viewPreferences();updateTabs();},saveVersion};
   }
   const api={attach,findOffsets,sanitizeStyle,sanitizeLayout,pageGeometry,normalized};
   root.COBPreviewEnhancements=api;

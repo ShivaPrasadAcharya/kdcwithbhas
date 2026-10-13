@@ -358,6 +358,18 @@
         const adeshCategory = adeshOverlay.querySelector("#cobAdeshCategory");
         const adeshOrder = adeshOverlay.querySelector("#cobAdeshOrder");
         const adeshText = adeshOverlay.querySelector("#cobAdeshText");
+        const adeshFormattingLabel = document.createElement("label");
+        adeshFormattingLabel.className = "cob-adesh-formatting";
+        const adeshFormatting = document.createElement("input");
+        adeshFormatting.type = "checkbox";
+        adeshFormatting.checked = true;
+        adeshFormattingLabel.append(adeshFormatting, document.createTextNode(" आदेशको मूल formatting राख्नुहोस्"));
+        adeshText.previousElementSibling.before(adeshFormattingLabel);
+        const adeshRichPreview = document.createElement("div");
+        adeshRichPreview.className = "cob-adesh-rich-preview";
+        adeshRichPreview.setAttribute("aria-label", "छानिएको आदेशको formatting सहित preview");
+        adeshRichPreview.hidden = true;
+        adeshText.after(adeshRichPreview);
         const adeshStatus = adeshOverlay.querySelector("#cobAdeshStatus");
         const adeshExport = adeshOverlay.querySelector("#cobAdeshExport");
         function selectedAdesh() {
@@ -365,12 +377,17 @@
           return category?.orders.find(item => item.id === adeshOrder.value) || null;
         }
         function rememberAdeshState() {
-          adeshFormState = {categoryId: adeshCategory.value, orderId: adeshOrder.value};
+          adeshFormState = {categoryId: adeshCategory.value, orderId: adeshOrder.value, preserveFormatting: adeshFormatting.checked};
           if (A) adeshStates.set(A, adeshFormState);
         }
         function updateAdeshText() {
           const order = selectedAdesh();
-          adeshText.value = order ? order.text : "";
+          const paragraphs = order && previewEnhancer ? previewEnhancer.orderParagraphs(order.text, adeshFormatting.checked) : [];
+          const rich = adeshFormatting.checked && paragraphs.some(p => p.querySelector("b,strong,i,em,u,s,sup,sub,[style]") || p.getAttribute("style"));
+          adeshText.value = order ? (previewEnhancer ? paragraphs.map(p => p.textContent).join("\n") : order.text) : "";
+          adeshText.hidden = rich;
+          adeshRichPreview.hidden = !rich;
+          adeshRichPreview.replaceChildren(...paragraphs);
           adeshExport.disabled = !order || !order.available || !order.text.trim();
           adeshStatus.textContent = order && !order.available ? (order.message || "यो आदेशको व्यहोरा खाली छ। अर्को आदेश छान्नुहोस्।") : "";
         }
@@ -404,11 +421,12 @@
           adeshOverlay.hidden = false;
           b.querySelector(".cob-modal").inert = true;
           adeshCategory.disabled = true; adeshOrder.disabled = true; adeshExport.disabled = true;
-          adeshText.value = ""; adeshStatus.textContent = "आदेशको सूची ल्याउँदैछ…";
+          adeshText.value = ""; adeshText.hidden = false; adeshRichPreview.hidden = true; adeshStatus.textContent = "आदेशको सूची ल्याउँदैछ…";
           adeshOverlay.querySelector("#cobAdeshContext").textContent = m(T.rawCase).caseNo + " · " + bahasRoles().join(" / ");
           adeshOverlay.querySelector(".cob-bahas-close").focus();
           const imported = w.querySelector("[data-cob-adesh='1']");
-          if (!adeshFormState && imported) adeshFormState = {categoryId: imported.dataset.cobAdeshCategory || "", orderId: imported.dataset.cobAdeshOrder || ""};
+          if (!adeshFormState && imported) adeshFormState = {categoryId: imported.dataset.cobAdeshCategory || "", orderId: imported.dataset.cobAdeshOrder || "", preserveFormatting: imported.dataset.cobAdeshFormatting !== "plain"};
+          adeshFormatting.checked = adeshFormState?.preserveFormatting !== false;
           try {
             const catalog = await loadAdeshCatalog();
             if (version !== adeshOpenVersion || adeshOverlay.hidden) return;
@@ -449,7 +467,8 @@
           const order = selectedAdesh();
           const body = w.querySelector("[data-cob-main-body='1']");
           if (!body || !order || !order.available || !order.text.trim()) return;
-          let orderText = order.text;
+          const preserveFormatting = adeshFormatting.checked;
+          let orderText = previewEnhancer && !preserveFormatting ? previewEnhancer.orderParagraphs(order.text, false).map(p => p.textContent).join("\n") : order.text;
           if (previewEnhancer && body.querySelector("[data-cob-adesh='1']")) {
             const originalKey = A;
             closeAdesh();
@@ -457,14 +476,18 @@
             if (orderText === null || A !== originalKey) return;
           }
           const fragment = document.createDocumentFragment();
-          orderText.replace(/\r/g, "").split(/\n+/).filter(part => part.trim()).forEach((part, index) => {
+          const paragraphs = previewEnhancer ? previewEnhancer.orderParagraphs(orderText, preserveFormatting) : orderText.replace(/\r/g, "").split(/\n+/).filter(part => part.trim()).map(part => { const p = document.createElement("p"); p.textContent = part.trim(); return p; });
+          paragraphs.forEach((source, index) => {
             const template = document.createElement("template");
-            template.innerHTML = V(part.trim(), {firstLine: ["फैसला", "कसूर_सजाय"].includes(g.value)});
+            template.innerHTML = V("", {firstLine: ["फैसला", "कसूर_सजाय"].includes(g.value)});
             const paragraph = template.content.firstElementChild;
+            paragraph.replaceChildren(...Array.from(source.childNodes));
+            if (source.getAttribute("style")) paragraph.style.cssText += ";" + source.style.cssText;
             paragraph.dataset.cobAdesh = "1";
             if (index === 0) {
               paragraph.dataset.cobAdeshCategory = adeshCategory.value;
               paragraph.dataset.cobAdeshOrder = order.id;
+              paragraph.dataset.cobAdeshFormatting = preserveFormatting ? "keep" : "plain";
             }
             fragment.appendChild(paragraph);
           });
@@ -489,6 +512,7 @@
         adeshButton.addEventListener("click", openAdesh);
         adeshCategory.addEventListener("change", () => { updateAdeshOrders(); rememberAdeshState(); });
         adeshOrder.addEventListener("change", () => { updateAdeshText(); rememberAdeshState(); });
+        adeshFormatting.addEventListener("change", () => { updateAdeshText(); rememberAdeshState(); });
         adeshExport.addEventListener("click", insertAdesh);
         adeshOverlay.querySelector(".cob-bahas-close").addEventListener("click", closeAdesh);
         adeshOverlay.querySelector("#cobAdeshCancel").addEventListener("click", closeAdesh);
@@ -497,7 +521,7 @@
           if (adeshOverlay.hidden) return;
           if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); closeAdesh(); }
           if (event.key === "Tab") {
-            const controls = Array.from(adeshOverlay.querySelectorAll("button,select,textarea")).filter(element => !element.disabled);
+            const controls = Array.from(adeshOverlay.querySelectorAll("button,select,textarea,input")).filter(element => !element.disabled && !element.hidden);
             const first = controls[0], last = controls[controls.length - 1];
             if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
             else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }

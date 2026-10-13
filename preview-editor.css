@@ -49,3 +49,8 @@
 .pe-diff .pe-added{background:#edf8ef;color:#174f2c;margin-bottom:5px;padding:5px}
 @media(max-width:700px){.cob-tools-panel:has(.pe-tools){width:auto;max-height:75vh}.pe-toolbar{padding:7px}.pe-compare{grid-template-columns:1fr}.pe-dialog{padding:14px}.pe-compare textarea{min-height:140px}.pe-dialog-backdrop{padding:8px}}
 @media print{.pe-toolbar,.pe-status,.pe-dialog-backdrop{display:none!important}.cob-draft.pe-page-layout{width:auto!important;min-height:0!important;max-width:none!important;padding:0!important;margin:0!important}.cob-draft.pe-show-marks p::after,.cob-draft.pe-show-marks [data-pe-tab]::after{content:none!important}.cob-draft [data-pe-page-before]{border:0!important;padding-top:0!important}}
+
+.cob-adesh-formatting{display:flex;align-items:center;gap:6px;margin:12px 0;font-size:14px;cursor:pointer}
+.cob-adesh-rich-preview{min-height:180px;max-height:320px;overflow:auto;box-sizing:border-box;padding:14px;border:1px solid #d2c6bd;border-radius:8px;color:#222;background:#fff;font:15px/1.8 "Noto Sans Devanagari","Nirmala UI",sans-serif;white-space:pre-wrap}
+.cob-adesh-rich-preview p{margin:0 0 8px}
+.cob-adesh-rich-preview[hidden],#cobAdeshText[hidden]{display:none!important}
