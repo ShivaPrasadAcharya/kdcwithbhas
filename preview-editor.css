@@ -56,3 +56,15 @@
 .cob-adesh-rich-preview[hidden],#cobAdeshText[hidden]{display:none!important}
 
 .cob-adesh-footer .cob-copy-success{color:#13783a;border-color:#13783a;background:#edf8ef}
+.pe-fullscreen{min-width:36px;padding:7px 10px;font-size:21px;line-height:1}
+.pe-fullscreen[aria-pressed=true]{color:#fff;background:#4b1220;border-color:#d6a547}
+.cob-head{flex-wrap:wrap}
+.cob-import-actions{flex-wrap:wrap}
+.pe-fact-cleanup{width:198px;max-width:100%;padding:8px;border:1px solid #a99b8c;border-radius:8px;background:#fff;color:#34262a;font:600 11px/1.4 "Noto Sans Devanagari","Nirmala UI",sans-serif}
+.pe-fact-cleanup:focus-visible,.pe-fullscreen:focus-visible{outline:3px solid #d6a547;outline-offset:2px}
+.cob-backdrop.pe-fullscreen-preview,.cob-backdrop:fullscreen{padding:0;width:100vw;height:100vh;height:100dvh;background:#fffdfa}
+.pe-fullscreen-preview>.cob-modal,.cob-backdrop:fullscreen>.cob-modal{width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border-radius:0;box-shadow:none}
+.pe-fullscreen-preview .cob-actions{right:12px}
+.pe-fullscreen-preview .cob-tools-panel{right:60px}
+@media(max-width:700px){.cob-head h2{flex:1;font-size:16px}.cob-head .cob-import-actions{order:2;width:100%}.pe-fact-cleanup{flex:1;min-width:175px}.pe-fullscreen-preview .cob-actions{right:10px}.pe-fullscreen-preview .cob-tools-panel{right:10px}}
+@media print{.cob-backdrop.pe-fullscreen-preview,.cob-backdrop:fullscreen,.pe-fullscreen-preview>.cob-modal,.cob-backdrop:fullscreen>.cob-modal{width:auto!important;height:auto!important;max-height:none!important}}

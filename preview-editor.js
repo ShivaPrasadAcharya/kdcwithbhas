@@ -85,6 +85,69 @@
     const toolbar=document.createElement("div");toolbar.className="pe-toolbar";toolbar.setAttribute("role","toolbar");toolbar.setAttribute("aria-label","Text formatting");
     toolbar.innerHTML='<select aria-label="Paragraph style" class="pe-quick-style">'+Object.keys(labels).map(k=>'<option value="'+k+'">'+labels[k]+'</option>').join("")+'</select><button type="button" data-pe-action="apply-style">Apply style</button><button type="button" data-pe-inline="bold" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-pe-inline="italic" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-pe-inline="underline" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-pe-action="undo" aria-label="Undo">↶</button><button type="button" data-pe-action="redo" aria-label="Redo">↷</button><button type="button" data-pe-action="find">Find</button><button type="button" data-pe-action="marks" aria-label="Show formatting marks" aria-pressed="false">¶</button>';
     draft.parentElement.before(toolbar,status);
+    const fullscreenButton=document.createElement("button");
+    fullscreenButton.type="button";fullscreenButton.className="cob-btn pe-fullscreen";
+    fullscreenButton.textContent="⛶";fullscreenButton.setAttribute("aria-label","Fullscreen preview");
+    fullscreenButton.setAttribute("aria-pressed","false");fullscreenButton.title="Fullscreen preview";
+    backdrop.querySelector("#cobBahas")?.after(fullscreenButton);
+    let expanded=false,usedBrowserFullscreen=false;
+    function fullscreenView(value){
+      expanded=value;backdrop.classList.toggle("pe-fullscreen-preview",value);
+      fullscreenButton.setAttribute("aria-pressed",String(value));
+      fullscreenButton.setAttribute("aria-label",value?"Exit fullscreen preview":"Fullscreen preview");
+      fullscreenButton.title=value?"Exit fullscreen preview":"Fullscreen preview";
+      fullscreenButton.textContent=value?"⤢":"⛶";
+    }
+    function leaveFullscreen(){
+      fullscreenView(false);
+      if(document.fullscreenElement===backdrop)document.exitFullscreen?.().catch(()=>{});
+      usedBrowserFullscreen=false;
+    }
+    fullscreenButton.addEventListener("click",async()=>{
+      if(expanded){leaveFullscreen();return;}
+      fullscreenView(true);
+      try{if(backdrop.requestFullscreen){await backdrop.requestFullscreen();usedBrowserFullscreen=document.fullscreenElement===backdrop;}}catch(_){} // Viewport expansion remains available when native fullscreen is unavailable.
+    });
+    document.addEventListener("fullscreenchange",()=>{
+      if(document.fullscreenElement===backdrop){usedBrowserFullscreen=true;fullscreenView(true);}
+      else if(usedBrowserFullscreen){usedBrowserFullscreen=false;fullscreenView(false);}
+    });
+    document.addEventListener("keydown",e=>{
+      if(e.key==="Escape"&&expanded&&!backdrop.querySelector(".cob-bahas-overlay:not([hidden]),.pe-dialog-backdrop")){
+        e.preventDefault();e.stopImmediatePropagation();leaveFullscreen();fullscreenButton.focus();
+      }
+    },true);
+    const cleanupSelect=document.createElement("select");
+    cleanupSelect.className="pe-fact-cleanup";cleanupSelect.setAttribute("aria-label","Bold and strikethrough cleanup");
+    cleanupSelect.title="Apply to preview body text. Text removal can be undone. The last option removes text carrying bold, strikethrough, or both.";
+    cleanupSelect.innerHTML='<option value="keep">Keep bold and strikethrough text</option><option value="unstrike">Remove strikes only (keep text)</option><option value="strike">Remove strikethrough text</option><option value="bold">Remove bold text</option><option value="both">Remove bold and strikethrough text</option>';
+    backdrop.querySelector("#cobAdesh")?.after(cleanupSelect);
+    cleanupSelect.addEventListener("change",()=>{
+      const mode=cleanupSelect.value;if(mode==="keep")return;
+      const body=draft.querySelector('[data-cob-main-body="1"]');
+      if(!body){cleanupSelect.value="keep";return;}
+      let removed=0;
+      transact(()=>{
+        if(mode==="unstrike"){
+          body.querySelectorAll("s,strike,del").forEach(el=>el.replaceWith(...Array.from(el.childNodes)));
+          [body,...body.querySelectorAll("*")].forEach(el=>{
+            const lines=getComputedStyle(el).textDecorationLine.split(" ");
+            if(lines.includes("line-through"))el.style.textDecorationLine=lines.filter(x=>x!=="line-through").join(" ")||"none";
+          });
+        }else{
+          textNodes(body).forEach(node=>{
+            let strike=false,parent=node.parentElement;
+            const weight=getComputedStyle(parent).fontWeight,bold=weight==="bold"||Number(weight)>=600;
+            while(parent&&body.contains(parent)){if(getComputedStyle(parent).textDecorationLine.includes("line-through"))strike=true;parent=parent.parentElement;}
+            if((mode==="strike"&&strike)||(mode==="bold"&&bold)||(mode==="both"&&(bold||strike))){removed+=node.nodeValue.length;node.remove();}
+          });
+          body.querySelectorAll("b,strong,s,strike,del,span").forEach(el=>{if(!el.childNodes.length&&!el.matches("[data-cob-list-marker],[data-pe-tab]"))el.remove();});
+          body.querySelectorAll("p[data-docx-p]").forEach(p=>{if(!p.textContent&&!p.querySelector("br,[data-cob-list-marker],[data-pe-tab]"))p.replaceChildren(document.createElement("br"));});
+        }
+      });
+      cleanupSelect.value="keep";
+      tell(mode==="unstrike"?"Strikethrough removed; text and bold kept. Undo is available.":removed+" marked characters removed from body text. Undo is available.");
+    });
     const section=document.createElement("div");section.className="pe-tools";
     const field=(name,label,type,value,extra)=>'<label>'+label+'<input data-pe-field="'+name+'" type="'+(type||"number")+'" value="'+escapeHtml(value)+'" '+(extra||"")+'></label>';
     section.innerHTML=[
@@ -378,7 +441,7 @@
       const last=versions().at(-1);
       if(last&&(!stored?.savedAt||new Date(last.time)>new Date(stored.savedAt)))tell("A newer recovery version is available in Tools → Recovery versions.");
     }
-    function close(){if(key&&settings.recovery)saveVersion("Before closing");clearTimeout(historyTimer);clearTimeout(recoveryTimer);pendingDialog?.close(null);key="";lastRange=null;clearHighlights();}
+    function close(){if(key&&settings.recovery)saveVersion("Before closing");clearTimeout(historyTimer);clearTimeout(recoveryTimer);pendingDialog?.close(null);leaveFullscreen();cleanupSelect.value="keep";key="";lastRange=null;clearHighlights();}
     section.addEventListener("change",e=>{
       if(e.target.matches("[data-pe-pref]")){
         const pref=e.target.dataset.pePref;settings[pref]=e.target.type==="checkbox"?e.target.checked:typeof defaults[pref]==="number"?clamp(e.target.value,pref==="retain"?2:pref==="tabWidth"?1:10,pref==="retain"?30:pref==="tabWidth"?12:300,defaults[pref]):e.target.value;

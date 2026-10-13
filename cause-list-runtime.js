@@ -1,7 +1,7 @@
 !(function () {
   "use strict";
   const bahasFormUrl = new URL("bahas.html", document.currentScript.src || document.baseURI).href;
-  const adeshCatalogUrl = new URL("adesh-catalog.json?v=1", document.currentScript.src || document.baseURI).href;
+  const adeshCatalogUrl = new URL("adesh-catalog.json?v=2", document.currentScript.src || document.baseURI).href;
   if (!document.documentElement.dataset.cobRuntimeLoaded) {
     document.documentElement.dataset.cobRuntimeLoaded = "1";
     var e = {},

@@ -20,3 +20,18 @@ Keyboard: Ctrl+B/I/U, Ctrl+Z/Y, Ctrl+F/H, Ctrl+S, Tab and Ctrl+Enter. Enter and 
 Styles, snippets, preferences and recovery versions are saved in this browser. Recovery is separate from the existing manual draft save and synchronization. Downloads retain text, inline formatting, paragraph spacing, indents, tab stops, keep properties, page breaks and page margins. Word and print browsers determine automatic pagination; installed fonts can affect layout.
 
 No editor-framework migration or external editing service is required. The retained static site and GitHub Actions build remain in use. The build runs preview-editor.test.cjs to verify original-text search offsets and DOCX formatting serialization.
+
+## Facts and preview cleanup
+
+Use the fullscreen button beside **बहससहित** to expand the preview and toggle back. Escape exits fullscreen; closing the preview also exits. A viewport-filling view is available if browser fullscreen is unavailable.
+
+The catalog's case-specific passages are marked as `<b><s>fact</s></b>` in the `text` field only. These include party and advocate names, pseudonyms, addresses, property identifiers, case/letter/receipt references, dates, amounts, shares, case-specific allegations, medical findings, factual admissions and individually chosen visit arrangements. Original wording, spelling, punctuation, sample headings, legal citations, and all other catalog fields are retained. Formation dates and cited precedent details that belong to the legal reasoning remain unmarked. Markers identify passages to review when adapting the template; they do not replace the source case facts automatically.
+
+The dropdown beside **आदेशसहित** defaults to **Keep bold and strikethrough text**. Selecting another option applies one action to the current preview body and then returns to Keep:
+
+- **Remove strikes only (keep text):** remove strikethrough formatting while keeping the words and bold.
+- **Remove strikethrough text:** delete words shown with strikethrough.
+- **Remove bold text:** delete words shown in bold.
+- **Remove bold and strikethrough text:** delete words shown in bold, strikethrough, or both.
+
+These actions preserve the document header, party block, signature, numbering markers and the catalog source. Undo restores the edited preview. DOCX export follows the resulting formatting and text.
