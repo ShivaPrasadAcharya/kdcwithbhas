@@ -72,3 +72,6 @@
 ::highlight(pe-selections){background:#b8dcff;color:inherit}
 .pe-selection-badge{color:#184c81!important;border-color:#6da4d0!important;background:#edf6ff!important}
 .pe-selection-badge[hidden]{display:none!important}
+
+/* Default page margin; custom page layouts override this inline. */
+@media screen{.cob-draft{padding-left:27mm}}

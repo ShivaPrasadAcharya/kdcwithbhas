@@ -1849,7 +1849,7 @@
           draft:w, panel:toolsPanel, backdrop:b, sanitize:ee, getState:draftState,
           rememberRange:rememberDraftRange, showTools:function () {setToolsOpen(true);},
           save:function () {N.click();}, continueNumbering:continuePreviousNumbering,
-          defaultLayout:function () {return ["फैसला","कसूर_सजाय"].includes(g.value) ? {paper:"A4",orientation:"portrait",top:22.225,right:14.2875,bottom:19.05,left:33.02} : {paper:"A4",orientation:"portrait",top:20,right:20,bottom:20,left:20};},
+          defaultLayout:function () {return ["फैसला","कसूर_सजाय"].includes(g.value) ? {paper:"A4",orientation:"portrait",top:22.225,right:14.2875,bottom:19.05,left:27} : {paper:"A4",orientation:"portrait",top:20,right:20,bottom:20,left:27};},
           restoreState:function (state) {
             if (!state || typeof state.draftHtml !== "string") return;
             if (["आदेश","अन्तिम आदेश","फैसला","कसूर_सजाय"].includes(state.documentType)) g.value = state.documentType;
@@ -1864,7 +1864,7 @@
         }) || null;
         function documentSectionXml(isDecision) {
           const layout = previewEnhancer?.getLayout();
-          if (!layout) return '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' + (isDecision ? '<w:pgMar w:top="1260" w:right="810" w:bottom="1080" w:left="1872"/>' : '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/>') + '</w:sectPr>';
+          if (!layout) return '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' + (isDecision ? '<w:pgMar w:top="1260" w:right="810" w:bottom="1080" w:left="1531"/>' : '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1531"/>') + '</w:sectPr>';
           const p = window.COBPreviewEnhancements.pageGeometry(layout);
           return '<w:sectPr><w:pgSz w:w="' + p.width + '" w:h="' + p.height + (p.landscape ? '" w:orient="landscape' : '') + '"/><w:pgMar w:top="' + p.top + '" w:right="' + p.right + '" w:bottom="' + p.bottom + '" w:left="' + p.left + '"/></w:sectPr>';
         }

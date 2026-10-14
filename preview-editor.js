@@ -50,10 +50,10 @@
     return s;
   }
   function sanitizeLayout(value) {
-    const layout=Object.assign({paper:"A4",orientation:"portrait",top:20,right:20,bottom:20,left:20},value||{});
+    const layout=Object.assign({paper:"A4",orientation:"portrait",top:20,right:20,bottom:20,left:27},value||{});
     layout.paper=layout.paper==="Letter"?"Letter":"A4";
     layout.orientation=layout.orientation==="landscape"?"landscape":"portrait";
-    ["top","right","bottom","left"].forEach(k=>layout[k]=clamp(layout[k],0,60,20));
+    ["top","right","bottom","left"].forEach(k=>layout[k]=clamp(layout[k],0,60,k==="left"?27:20));
     return layout;
   }
   function pageGeometry(value) {
@@ -183,7 +183,7 @@
       '</div><div class="pe-buttons"><button type="button" data-pe-action="apply-format">Apply to paragraphs</button><button type="button" data-pe-action="save-style">Save this style</button><button type="button" data-pe-action="reset-style">Reset this style</button></div><small>Styles are customizable and saved in this browser. Applying a style affects selected paragraphs only.</small></details>',
       '<details class="pe-section" id="peFindSection"><summary>Find & replace</summary><div class="pe-fields">'+field("query","Find","text","")+field("replacement","Replace with","text","")+'<label>Scope<select data-pe-field="scope"><option value="body">Body text</option><option value="all">Whole document</option></select></label><label class="pe-check"><input data-pe-pref="normalize" type="checkbox">Nepali normalized search</label></div><div class="pe-buttons"><button type="button" data-pe-action="search">Find</button><button type="button" data-pe-action="previous">↑</button><button type="button" data-pe-action="next">↓</button><button type="button" data-pe-action="replace">Replace</button><button type="button" data-pe-action="replace-all">Replace all</button></div><output id="peFindCount" aria-live="polite">0 matches</output></details>',
       '<details class="pe-section"><summary>Page layout & paragraph breaks</summary><div class="pe-fields"><label>Paper<select data-pe-layout="paper"><option>A4</option><option>Letter</option></select></label><label>Orientation<select data-pe-layout="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>',
-      ["top","right","bottom","left"].map(k=>'<label>'+k[0].toUpperCase()+k.slice(1)+' margin (mm)<input data-pe-layout="'+k+'" type="number" min="0" max="60" value="20"></label>').join(""),
+      ["top","right","bottom","left"].map(k=>'<label>'+k[0].toUpperCase()+k.slice(1)+' margin (mm)<input data-pe-layout="'+k+'" type="number" min="0" max="60" value="'+(k==="left"?27:20)+'"></label>').join(""),
       '</div><div class="pe-buttons"><button type="button" data-pe-action="apply-layout">Apply page layout</button><button type="button" data-pe-action="reset-layout">Original layout</button><button type="button" data-pe-action="page-break">Page break before paragraph</button><button type="button" data-pe-action="remove-break">Remove page break</button><button type="button" data-pe-action="keep-group">Keep selected paragraphs together</button></div><small>Margins, page breaks and keep options are included in DOCX. Automatic page flow is determined by Word or your print browser.</small></details>',
       '<details class="pe-section"><summary>Reusable text snippets</summary><div class="pe-fields"><label class="pe-full">Saved snippets<select data-pe-field="snippet"></select></label>'+field("snippetName","Name","text","")+'<label class="pe-full">Text<textarea data-pe-field="snippetText" rows="4" placeholder="तपाईंको नियमित प्रयोग हुने व्यहोरा"></textarea></label></div><div class="pe-buttons"><button type="button" data-pe-action="insert-snippet">Insert at cursor</button><button type="button" data-pe-action="save-snippet">Save snippet</button><button type="button" data-pe-action="remove-snippet">Remove snippet</button></div></details>',
       '<details class="pe-section"><summary>Recovery versions</summary><label>Saved versions<select data-pe-field="version"></select></label><div class="pe-buttons"><button type="button" data-pe-action="snapshot">Save version now</button><button type="button" data-pe-action="compare-version">Compare</button><button type="button" data-pe-action="restore-version">Restore</button></div><small id="peRecoveryNote">Recovery versions are kept in this browser, separately for each case.</small></details>',
@@ -323,7 +323,7 @@
       section.querySelectorAll("[data-pe-layout]").forEach(el=>el.value=l[el.dataset.peLayout]);
       let printStyle=document.getElementById("pePrintPageStyle");
       if(!printStyle){printStyle=document.createElement("style");printStyle.id="pePrintPageStyle";document.head.append(printStyle);}
-      printStyle.textContent=layout?"@page {size:"+layout.paper+" "+layout.orientation+";margin:"+layout.top+"mm "+layout.right+"mm "+layout.bottom+"mm "+layout.left+"mm;}":"";
+      printStyle.textContent=layout?"@page {size:"+layout.paper+" "+layout.orientation+";margin:"+layout.top+"mm "+layout.right+"mm "+layout.bottom+"mm "+layout.left+"mm;}":"@page {size:"+l.paper+" "+l.orientation+";margin:"+l.top+"mm "+l.right+"mm "+l.bottom+"mm "+l.left+"mm;}";
     }
     function restoreSnapshot(s) {
       clearSelections();

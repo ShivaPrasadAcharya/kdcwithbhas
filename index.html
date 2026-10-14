@@ -905,6 +905,13 @@
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       footer { flex-direction: column; }
     }
+
+    .input-disclosure { border: 1px solid var(--border, #d5cabe); border-radius: 9px; overflow: hidden; }
+    .input-disclosure > summary { padding: 12px; cursor: pointer; color: #6d1a27; font-weight: 700; font-size: .88rem; }
+    .input-disclosure > summary:focus-visible { outline: 2px solid #6d1a27; outline-offset: -3px; }
+    .input-disclosure[open] > summary { border-bottom: 1px solid #e7ddd2; }
+    .input-disclosure-body { display: grid; gap: 14px; padding: 12px; }
+    .input-disclosure > .preparation-fields { padding: 12px; margin: 0; }
   </style>
   <link id="cause-list-firebase-sync-style" rel="stylesheet" href="firebase-sync.css">
 </head>
@@ -996,13 +1003,21 @@
             <span class="step">१</span>
             <h3>Input source code</h3>
           </div>
-          <div class="segmented" role="tablist" aria-label="Input method">
-            <button type="button" id="uploadTab" role="tab" aria-selected="false" aria-controls="uploadPane">फाइल Upload</button>
-            <button type="button" id="pasteTab" role="tab" aria-selected="true" aria-controls="pastePane">Code Paste</button>
-          </div>
+
         </div>
 
         <div class="panel-body">
+          <div class="date-loader">
+            <label for="causeDateSearch">अदालतबाट मितिअनुसार पेशी सूची ल्याउनुहोस्</label>
+            <div class="date-loader-row">
+              <input id="causeDateSearch" inputmode="numeric" autocomplete="off" placeholder="YYYYMMDD" aria-describedby="causeDateHint causeDateNotice">
+              <button type="button" class="btn btn-subtle" id="causeDateSearchBtn">पेशी सूची ल्याउनुहोस्</button>
+            </div>
+            <small id="causeDateHint">मिति YYYYMMDD वा YYYY-MM-DD मा लेख्नुहोस्; नेपाली अंक पनि चल्छ। अदालतको वेबसाइटबाट सो मितिको सूची ल्याएर छानिएको न्यायाधीशको output स्वतः तयार हुन्छ।</small>
+            <p id="causeDateNotice" class="date-lookup-notice" role="status" aria-live="polite" hidden></p>
+          </div>
+
+
           <div class="judge-picker">
             <label for="judgeSelect">श्रीमान् छनोट गर्नुहोस्</label>
             <select id="judgeSelect" aria-label="Filter र आदेशका लागि न्यायाधीश छान्नुहोस्">
@@ -1018,16 +1033,13 @@
             <button type="button" class="btn btn-subtle" id="restoreInputHistory" disabled>Restore</button>
           </div>
 
-          <div class="date-loader">
-            <label for="causeDateSearch">अदालतबाट मितिअनुसार पेशी सूची ल्याउनुहोस्</label>
-            <div class="date-loader-row">
-              <input id="causeDateSearch" inputmode="numeric" autocomplete="off" placeholder="YYYYMMDD" aria-describedby="causeDateHint causeDateNotice">
-              <button type="button" class="btn btn-subtle" id="causeDateSearchBtn">पेशी सूची ल्याउनुहोस्</button>
-            </div>
-            <small id="causeDateHint">मिति YYYYMMDD वा YYYY-MM-DD मा लेख्नुहोस्; नेपाली अंक पनि चल्छ। अदालतको वेबसाइटबाट सो मितिको सूची ल्याएर छानिएको न्यायाधीशको output स्वतः तयार हुन्छ।</small>
-            <p id="causeDateNotice" class="date-lookup-notice" role="status" aria-live="polite" hidden></p>
+          <details class="input-disclosure" id="sourceDisclosure">
+            <summary>Source code — फाइल Upload / Code Paste</summary>
+            <div class="input-disclosure-body">
+          <div class="segmented" role="tablist" aria-label="Input method">
+            <button type="button" id="uploadTab" role="tab" aria-selected="false" aria-controls="uploadPane">फाइल Upload</button>
+            <button type="button" id="pasteTab" role="tab" aria-selected="true" aria-controls="pastePane">Code Paste</button>
           </div>
-
           <div id="uploadPane" class="hidden" role="tabpanel" aria-labelledby="uploadTab">
             <div class="drop-zone" id="dropZone">
               <div>
@@ -1046,6 +1058,11 @@
             <textarea id="sourceInput" spellcheck="false" placeholder="यहाँ पूरा source code paste गर्नुहोस्…"></textarea>
           </div>
 
+            </div>
+          </details>
+
+          <details class="input-disclosure" id="preparationDisclosure">
+            <summary>फैसला तयार गर्न सहयोग गर्ने — शाखा अधिकृत, कम्प्युटर अपरेटर, इजलास नम्बर</summary>
           <div class="preparation-fields" role="group" aria-label="फैसला तयार गर्न सहयोग गर्ने" aria-describedby="preparationFieldsHint">
             <label for="branchOfficerInput">शाखा अधिकृत</label>
             <input type="text" id="branchOfficerInput" autocomplete="off" placeholder="नाम (ऐच्छिक)">
@@ -1055,6 +1072,8 @@
             <input type="text" id="benchNumberInput" inputmode="numeric" autocomplete="off" placeholder="नम्बर (ऐच्छिक)">
             <small id="preparationFieldsHint">यी विवरण फैसला preview मा स्वतः आउँछन्। फाँट सम्बन्धित मुद्दाको row बाट लिइन्छ। खाली छोड्न सकिन्छ।</small>
           </div>
+
+          </details>
 
           <div class="row-filter-control">
             <button type="button" class="btn row-filter-toggle" id="rowFilterToggle" aria-expanded="false" aria-controls="rowFilterPanel" disabled>Filter Causelist Tables &amp; Rows</button>
@@ -2874,7 +2893,7 @@
         const editorStyle = doc.createElement("link");
         editorStyle.id = "preview-editor-style";
         editorStyle.rel = "stylesheet";
-        editorStyle.href = "preview-editor.css?v=6";
+        editorStyle.href = "preview-editor.css?v=7";
         head.appendChild(editorStyle);
         const syncStyle = doc.createElement("link");
         syncStyle.id = "cause-list-firebase-sync-style";
@@ -2899,13 +2918,13 @@
         const editorRuntime = doc.createElement("script");
         editorRuntime.id = "preview-editor-runtime";
         editorRuntime.async = false;
-        editorRuntime.src = "preview-editor.js?v=5";
+        editorRuntime.src = "preview-editor.js?v=6";
         (doc.body || doc.documentElement).appendChild(editorRuntime);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";
         runtime.async = false;
         runtime.setAttribute("data-version", "preview-editor-4");
-        runtime.src = "cause-list-runtime.js?v=preview-editor-4";
+        runtime.src = "cause-list-runtime.js?v=input-layout-1";
         (doc.body || doc.documentElement).appendChild(runtime);
         const proofreaderRuntime = doc.createElement("script");
         proofreaderRuntime.id = "nepali-proofreader-engine-runtime";
