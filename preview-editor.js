@@ -126,12 +126,19 @@
       }
     },true);
     const cleanupSelect=document.createElement("select");
-    cleanupSelect.className="pe-fact-cleanup";cleanupSelect.setAttribute("aria-label","Bold and strikethrough cleanup");
-    cleanupSelect.title="Cleanup applies to body text. Selection actions apply only to selected text. Hold Ctrl while selecting more passages. All edits support Undo.";
-    cleanupSelect.innerHTML='<option value="keep">Keep bold and strikethrough text</option><option value="unstrike">Remove strikes only (keep text)</option><option value="strike">Remove strikethrough text</option><option value="bold">Remove bold text</option><option value="both">Remove bold and strikethrough text</option>';
-    const selectionGroup=document.createElement("optgroup");selectionGroup.label="Selected text (Ctrl + select for multiple)";
-    [["selected-bold","Make selected text bold"],["selected-strike","Make selected text strikethrough"],["selected-both","Make selected text bold and strikethrough"],["selected-unbold","Remove bold from selected text"],["selected-unstrike","Remove strikethrough from selected text"]].forEach(([value,label])=>selectionGroup.append(new Option(label,value)));
-    cleanupSelect.append(selectionGroup);
+    cleanupSelect.className="pe-fact-cleanup";cleanupSelect.setAttribute("aria-label","Text formatting and cleanup");
+    cleanupSelect.title="Selection actions affect only selected text. Hold Ctrl while selecting more passages. Body actions affect all body text. Remove formatting keeps text; Delete text removes it. All edits support Undo.";
+    cleanupSelect.append(new Option("Keep text and formatting","keep"));
+    [
+      ["Add formatting (selection)",[["selected-bold","Add bold"],["selected-strike","Add strikethrough"],["selected-both","Add bold and strikethrough"]]],
+      ["Remove formatting (selection)",[["selected-unbold","Remove bold (keep text)"],["selected-unstrike","Remove strikethrough (keep text)"]]],
+      ["Remove formatting (body)",[["unstrike","Remove strikethrough (keep text)"]]],
+      ["Delete text (body)",[["bold","Delete bold text"],["strike","Delete strikethrough text"],["both","Delete bold or strikethrough text"]]]
+    ].forEach(([label,options])=>{
+      const group=document.createElement("optgroup");group.label=label;
+      options.forEach(([value,text])=>group.append(new Option(text,value)));
+      cleanupSelect.append(group);
+    });
     cleanupSelect.addEventListener("pointerdown",saveRange);
     backdrop.querySelector("#cobAdesh")?.after(cleanupSelect);
     cleanupSelect.addEventListener("change",()=>{
@@ -233,7 +240,7 @@
     document.addEventListener("pointerup",()=>{
       if(!selectingWithCtrl)return;selectingWithCtrl=false;saveRange();
       retainedSelections=mergeSelectionSpans([...retainedSelections,...currentSelections()]);showSelections();
-      tell(retainedSelections.length+" selections retained. Choose a Selected text action in the top dropdown.");
+      tell(retainedSelections.length+" selections retained. Choose an Add formatting (selection) or Remove formatting (selection) action in the top dropdown.");
     });
     function effectiveDecorations(element){const lines=new Set();for(let p=element;p&&draft.contains(p);p=p.parentElement)getComputedStyle(p).textDecorationLine.split(" ").filter(l=>l!=="none").forEach(l=>lines.add(l));return lines;}
     function formatSelected(mode){
