@@ -127,10 +127,12 @@
     },true);
     const cleanupSelect=document.createElement("select");
     cleanupSelect.className="pe-fact-cleanup";cleanupSelect.setAttribute("aria-label","Text formatting and cleanup");
-    cleanupSelect.title="Selection actions affect only selected text. Hold Ctrl while selecting more passages. Body actions affect all body text. Remove formatting keeps text; Delete text removes it. All edits support Undo.";
+    cleanupSelect.title="Selection actions affect only selected text. Hold Ctrl while selecting more passages. Select text and Colour text scan the whole document; bold and strikethrough means both formats on the same text. Body actions affect all body text. Remove formatting keeps text; Delete text removes it. All edits support Undo.";
     cleanupSelect.append(new Option("Keep text and formatting","keep"));
     [
+      ["Select text (document)",[["select-bold","Select all bold text"],["select-strike","Select all strikethrough text"],["select-both","Select all bold and strikethrough text"]]],
       ["Add formatting (selection)",[["selected-bold","Add bold"],["selected-strike","Add strikethrough"],["selected-both","Add bold and strikethrough"]]],
+      ["Colour text (document)",[["formatted-red","Make bold and strikethrough text red"]]],
       ["Remove formatting (selection)",[["selected-unbold","Remove bold (keep text)"],["selected-unstrike","Remove strikethrough (keep text)"]]],
       ["Remove formatting (body)",[["unstrike","Remove strikethrough (keep text)"]]],
       ["Delete text (body)",[["bold","Delete bold text"],["strike","Delete strikethrough text"],["both","Delete bold or strikethrough text"]]]
@@ -143,6 +145,8 @@
     backdrop.querySelector("#cobAdesh")?.after(cleanupSelect);
     cleanupSelect.addEventListener("change",()=>{
       const mode=cleanupSelect.value;if(mode==="keep")return;
+      if(mode.startsWith("select-")){selectFormattedText(mode.slice(7));cleanupSelect.value="keep";return;}
+      if(mode==="formatted-red"){colourFormattedText();cleanupSelect.value="keep";return;}
       if(mode.startsWith("selected-")){formatSelected(mode);cleanupSelect.value="keep";return;}
       const body=draft.querySelector('[data-cob-main-body="1"]');
       if(!body){cleanupSelect.value="keep";return;}
@@ -243,8 +247,33 @@
       tell(retainedSelections.length+" selections retained. Choose an Add formatting (selection) or Remove formatting (selection) action in the top dropdown.");
     });
     function effectiveDecorations(element){const lines=new Set();for(let p=element;p&&draft.contains(p);p=p.parentElement)getComputedStyle(p).textDecorationLine.split(" ").filter(l=>l!=="none").forEach(l=>lines.add(l));return lines;}
-    function formatSelected(mode){
-      const spans=mergeSelectionSpans([...retainedSelections,...currentSelections()]);
+    function formattedTextSpans(mode){
+      let offset=0;const spans=[];
+      textNodes(draft).forEach(node=>{
+        const end=offset+node.length,weight=getComputedStyle(node.parentElement).fontWeight;
+        const bold=weight==="bold"||Number(weight)>=600;
+        const strike=effectiveDecorations(node.parentElement).has("line-through");
+        if((mode==="bold"&&bold)||(mode==="strike"&&strike)||(mode==="both"&&bold&&strike))spans.push({start:offset,end});
+        offset=end;
+      });
+      return mergeSelectionSpans(spans);
+    }
+    function selectFormattedText(mode){
+      clearSelections();lastRange=null;getSelection()?.removeAllRanges();
+      retainedSelections=formattedTextSpans(mode);
+      if(!retainedSelections.length){tell("No matching formatted text found in the document.");return;}
+      const range=rangeFromOffsets(textNodes(draft),retainedSelections[0].start,retainedSelections[0].end);
+      if(range){selectRange(range,true);blockFor(range.startContainer)?.scrollIntoView({block:"nearest"});}
+      showSelections();
+      tell(retainedSelections.length+" matching passage(s) selected. Choose a selection formatting action in the top dropdown. Use the selections × button to clear.");
+    }
+    function colourFormattedText(){
+      const spans=formattedTextSpans("both");
+      if(!spans.length){tell("No text with both bold and strikethrough found in the document.");return;}
+      formatSelected("selected-red",spans);
+      tell("Bold and strikethrough text coloured red. Undo is available.");
+    }
+    function formatSelected(mode,spans=mergeSelectionSpans([...retainedSelections,...currentSelections()])){
       if(!spans.length){tell("पहिले text छान्नुहोस्। Ctrl थिचेर थप text छान्न सकिन्छ।");return;}
       let offset=0;const parts=[];
       textNodes(draft).forEach(n=>{
@@ -255,6 +284,7 @@
         if(mode==="selected-unbold")style.fontWeight="400";
         if(mode==="selected-strike"||mode==="selected-both")lines.add("line-through");
         if(mode==="selected-unstrike")lines.delete("line-through");
+        if(mode==="selected-red")style.color="#ff0000";
         style.textDecoration=Array.from(lines).join(" ")||"none";
         spans.forEach(s=>{const start=Math.max(0,s.start-offset),end=Math.min(n.length,s.end-offset);if(end>start)parts.push({node:n,start,end,style:Object.assign({},style)});});offset=next;
       });
