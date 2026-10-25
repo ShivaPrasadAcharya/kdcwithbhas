@@ -129,9 +129,13 @@
     toolbar.innerHTML='<select aria-label="Paragraph style" class="pe-quick-style">'+Object.keys(labels).map(k=>'<option value="'+k+'">'+labels[k]+'</option>').join("")+'</select><button type="button" data-pe-action="apply-style">Apply style</button><button type="button" data-pe-inline="bold" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-pe-inline="italic" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-pe-inline="underline" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-pe-action="undo" aria-label="Undo">↶</button><button type="button" data-pe-action="redo" aria-label="Redo">↷</button><button type="button" data-pe-action="find">Find</button><button type="button" data-pe-action="marks" aria-label="Show formatting marks" aria-pressed="false">¶</button>';
     draft.parentElement.before(toolbar,status);
     const headerTools=document.createElement("div");headerTools.className="pe-header-tools";headerTools.setAttribute("role","toolbar");headerTools.setAttribute("aria-label","Preview actions");
+    ["bold","italic","underline"].forEach(style=>headerTools.append(toolbar.querySelector('[data-pe-inline="'+style+'"]')));
     ["undo","redo","find","marks"].forEach(action=>headerTools.append(toolbar.querySelector('[data-pe-action="'+action+'"]')));
     const applyParagraphButton=document.createElement("button");applyParagraphButton.type="button";applyParagraphButton.dataset.peAction="apply-paragraph-format";applyParagraphButton.textContent="Apply ¶";applyParagraphButton.setAttribute("aria-label","Apply paragraph formatting only");applyParagraphButton.title="Apply copied paragraph formatting without changing character formatting";applyParagraphButton.hidden=true;headerTools.append(applyParagraphButton);
-    backdrop.querySelector(".cob-head .cob-close").before(headerTools);
+    toolbar.querySelector('[data-pe-action="apply-style"]').textContent="Apply";
+    toolbar.querySelector('[data-pe-action="apply-style"]').setAttribute("aria-label","Apply style");
+    toolbar.querySelector('[data-pe-action="apply-style"]').title="Apply paragraph style";
+    backdrop.querySelector(".cob-head .cob-close").before(toolbar,headerTools);
     let copiedParagraphFormat=null,selectedParagraphMark=null;
     function clearParagraphMarkSelection(){selectedParagraphMark?.classList.remove("pe-mark-selected");selectedParagraphMark?.setAttribute("aria-pressed","false");selectedParagraphMark=null;}
     function syncParagraphMarks(){

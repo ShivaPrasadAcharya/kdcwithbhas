@@ -90,3 +90,18 @@
 .pe-header-tools button[aria-pressed="true"]{background:#fff0b6;color:#4d1925;border-color:#d5ab43}
 .pe-header-tools button:focus-visible{outline:2px solid #f6d98e;outline-offset:2px}
 @media print{.pe-header-tools,.cob-draft [data-pe-paragraph-mark]{display:none!important}}
+
+/* One compact row; narrow screens can scroll the ribbon horizontally. */
+.cob-head{flex-wrap:nowrap;justify-content:flex-start;gap:5px;min-height:38px;padding:5px 9px;border-bottom-width:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#c59132 #6d1724}
+.cob-head::-webkit-scrollbar{height:4px}
+.cob-head::-webkit-scrollbar-thumb{background:#c59132;border-radius:4px}
+.cob-head #cobTitle{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.cob-head .cob-import-actions{display:flex;flex:0 0 auto;flex-wrap:nowrap;align-items:center;gap:4px;order:0;width:auto}
+.cob-head .cob-btn,.cob-head .pe-header-tools button,.cob-head .pe-toolbar button{flex:none;min-height:27px;height:27px;margin:0;padding:3px 6px;border-radius:5px;white-space:nowrap;font-size:11px;line-height:1.2}
+.cob-head .pe-fullscreen{min-width:27px;width:27px;padding:2px;font-size:17px}
+.cob-head .pe-fact-cleanup{flex:0 0 142px;min-width:142px;max-width:142px;width:142px;height:27px;padding:3px 5px;border-radius:5px;font-size:10px;line-height:1.2}
+.cob-head .pe-toolbar{display:flex;flex:0 0 auto;flex-wrap:nowrap;align-items:center;gap:3px;margin:0;padding:0;border:0;background:transparent}
+.cob-head .pe-toolbar[hidden]{display:none}
+.cob-head .pe-toolbar select{width:103px;min-width:103px;max-width:103px;height:27px;padding:3px;border-radius:5px;font-size:10px;line-height:1.2}
+.cob-head .pe-header-tools{flex:0 0 auto;flex-wrap:nowrap;gap:3px;margin-left:auto}
+.cob-head .cob-close{position:sticky;right:0;flex:0 0 27px;width:27px;height:27px;margin-left:2px;padding:0;background:#6d1724;font-size:21px;line-height:1}

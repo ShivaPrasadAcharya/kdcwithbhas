@@ -614,6 +614,8 @@
 
     #goCauseListBtn:not(:disabled) { color: #fff; background: #238636; border-color: #238636; }
     #goCauseListBtn:not(:disabled):hover { background: #1b6e2c; }
+    .preparation-save-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    #preparationSaveStatus { color: #177245; font-size: .74rem; }
     .preparation-fields .reuse-preparation { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
     .preparation-fields .reuse-preparation input { width: 17px; min-height: 17px; height: 17px; accent-color: #238636; }
     .btn-subtle { color: var(--maroon); background: #fff8f0; border-color: #e7d8c3; }
@@ -1070,14 +1072,15 @@
           <details class="input-disclosure" id="preparationDisclosure">
             <summary>फैसला तयार गर्न सहयोग गर्ने — शाखा अधिकृत, कम्प्युटर अपरेटर, इजलास नम्बर</summary>
           <div class="preparation-fields" role="group" aria-label="फैसला तयार गर्न सहयोग गर्ने" aria-describedby="preparationFieldsHint">
-            <label class="reuse-preparation"><input type="checkbox" id="usePreviousPreparation" checked> Use previous entry — अघिल्लो विवरण प्रयोग गर्नुहोस्</label>
+            <label class="reuse-preparation"><input type="checkbox" id="usePreviousPreparation" checked> Use saved entries — सुरक्षित विवरण प्रयोग गर्नुहोस्</label>
             <label for="branchOfficerInput">शाखा अधिकृत</label>
             <input type="text" id="branchOfficerInput" autocomplete="off" placeholder="नाम (ऐच्छिक)">
             <label for="computerOperatorInput">कम्प्युटर अपरेटर</label>
             <input type="text" id="computerOperatorInput" autocomplete="off" placeholder="नाम (ऐच्छिक)">
             <label for="benchNumberInput">इजलास नम्बर</label>
             <input type="text" id="benchNumberInput" inputmode="numeric" autocomplete="off" placeholder="नम्बर (ऐच्छिक)">
-            <small id="preparationFieldsHint">यी विवरण फैसला preview मा स्वतः आउँछन्। फाँट सम्बन्धित मुद्दाको row बाट लिइन्छ। खाली छोड्न सकिन्छ।</small>
+            <div class="preparation-save-row"><button type="button" class="btn btn-subtle" id="savePreparationBtn">Save entries — विवरण सुरक्षित गर्नुहोस्</button><span id="preparationSaveStatus" role="status" aria-live="polite"></span></div>
+            <small id="preparationFieldsHint">यी विवरण फैसला preview मा स्वतः आउँछन्। पुनः प्रयोग गर्न Save entries थिच्नुहोस्। फाँट सम्बन्धित मुद्दाको row बाट लिइन्छ। खाली छोड्न सकिन्छ।</small>
           </div>
 
           </details>
@@ -1424,6 +1427,8 @@
       const judgeSelect = document.getElementById("judgeSelect");
       const goCauseListBtn = document.getElementById("goCauseListBtn");
       const usePreviousPreparation = document.getElementById("usePreviousPreparation");
+      const savePreparationBtn = document.getElementById("savePreparationBtn");
+      const preparationSaveStatus = document.getElementById("preparationSaveStatus");
       const PREPARATION_KEY = "kdcwithbhas:preparation-details:v1";
       let savedPreparation = {};
       const branchOfficerInput = document.getElementById("branchOfficerInput");
@@ -2820,15 +2825,16 @@
       function persistPreparation(saveFields = false) {
         if (saveFields) savedPreparation = readPreparationDetails();
         try {
-          localStorage.setItem(PREPARATION_KEY, JSON.stringify({ usePrevious: usePreviousPreparation.checked, details: savedPreparation }));
-        } catch (error) { /* The form remains usable if browser storage is unavailable. */ }
+          localStorage.setItem(PREPARATION_KEY, JSON.stringify({ useSaved: usePreviousPreparation.checked, details: savedPreparation }));
+          return true;
+        } catch (error) { return false; }
       }
 
       function restorePreparation() {
         try {
           const stored = JSON.parse(localStorage.getItem(PREPARATION_KEY) || "null");
           if (stored && typeof stored === "object") {
-            usePreviousPreparation.checked = stored.usePrevious !== false;
+            usePreviousPreparation.checked = (typeof stored.useSaved === "boolean" ? stored.useSaved : stored.usePrevious) !== false;
             const details = stored.details || {};
             ["branchOfficer", "computerOperator", "benchNumber"].forEach((name) => {
               if (typeof details[name] === "string") savedPreparation[name] = details[name];
@@ -2866,7 +2872,7 @@
         branchOfficerInput.value = details.branchOfficer || "";
         computerOperatorInput.value = details.computerOperator || "";
         benchNumberInput.value = details.benchNumber || "";
-        persistPreparation(true);
+        preparationSaveStatus.textContent = "History बाट विवरण आयो। सुरक्षित गर्न Save entries थिच्नुहोस्।";
         setMode("paste");
         syncSource(session.source, session.fileLabel || "History");
         const judge = Array.from(judgeSelect.options).find((option) => normalize(option.value) === normalize(session.target));
@@ -2945,7 +2951,7 @@
         const editorStyle = doc.createElement("link");
         editorStyle.id = "preview-editor-style";
         editorStyle.rel = "stylesheet";
-        editorStyle.href = "preview-editor.css?v=9";
+        editorStyle.href = "preview-editor.css?v=10";
         head.appendChild(editorStyle);
         const syncStyle = doc.createElement("link");
         syncStyle.id = "cause-list-firebase-sync-style";
@@ -2970,7 +2976,7 @@
         const editorRuntime = doc.createElement("script");
         editorRuntime.id = "preview-editor-runtime";
         editorRuntime.async = false;
-        editorRuntime.src = "preview-editor.js?v=9";
+        editorRuntime.src = "preview-editor.js?v=10";
         (doc.body || doc.documentElement).appendChild(editorRuntime);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";
@@ -3744,17 +3750,20 @@
       chooseFile.addEventListener("click", () => fileInput.click());
       fileInput.addEventListener("change", () => readFile(fileInput.files[0]));
       sourceInput.addEventListener("input", () => syncSource(sourceInput.value));
+      savePreparationBtn.addEventListener("click", () => {
+        const saved = persistPreparation(true);
+        preparationSaveStatus.textContent = saved ? "✓ विवरण सुरक्षित भयो।" : "Browser मा विवरण सुरक्षित गर्न सकिएन।";
+      });
       usePreviousPreparation.addEventListener("change", () => {
         persistPreparation();
         applySavedPreparation();
+        preparationSaveStatus.textContent = usePreviousPreparation.checked ? "सुरक्षित विवरण प्रयोग भयो।" : "";
         if (sourceCode.trim() && !causeDateLoadController) runFilter();
         document.dispatchEvent(new CustomEvent("cause-list:field-snapshot"));
       });
       [branchOfficerInput, computerOperatorInput, benchNumberInput].forEach((input) => {
-        input.addEventListener("input", () => persistPreparation(true));
-        input.addEventListener("blur", () => persistPreparation(true));
+        input.addEventListener("input", () => { preparationSaveStatus.textContent = "परिवर्तन सुरक्षित गर्न Save entries थिच्नुहोस्।"; });
         input.addEventListener("change", () => {
-          persistPreparation(true);
           if (sourceCode.trim() && !causeDateLoadController) runFilter();
         });
       });
@@ -3891,9 +3900,7 @@
       });
       readInputHistory();
       restorePreparation();
-      window.addEventListener("pagehide", () => {
-        if (usePreviousPreparation.checked || Object.values(readPreparationDetails()).some(Boolean)) persistPreparation(true);
-      });
+      window.addEventListener("pagehide", () => persistPreparation());
       const openSharedRibbonSearch = () => {
         const params = new URLSearchParams(location.search);
         const query = String(params.get("search") || "").trim();
