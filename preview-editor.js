@@ -1,7 +1,7 @@
 (function (root) {
   "use strict";
   const SETTINGS_KEY = "kdcwithbhas:preview-settings:v1";
-  const defaults = {toolbar:true, marks:false, askPaste:true, pasteMode:"match", normalize:true, recovery:true, interval:30, retain:10, review:"changed", tabWidth:4};
+  const defaults = {toolbar:true, marks:false, askPaste:true, pasteMode:"plain", normalize:true, recovery:true, interval:30, retain:10, review:"changed", tabWidth:4};
   const labels = {normal:"सामान्य अनुच्छेद", heading:"शीर्षक", bahas:"बहस", thahar:"ठहर", tapasil:"तपसिल", signature:"हस्ताक्षर"};
   const baseStyle = {font:"Kalimati", size:13, bold:false, italic:false, underline:false, color:"#111111", align:"justify", line:1.15, before:0, after:0, left:0, right:0, first:0, keepNext:false, keepLines:false, tabs:""};
   const initialStyles = {
@@ -82,7 +82,7 @@
       }
     } catch (_) {}
     settings.interval=clamp(settings.interval,10,300,30);settings.retain=clamp(settings.retain,2,30,10);settings.tabWidth=clamp(settings.tabWidth,1,12,4);
-    if(!["keep","match","plain"].includes(settings.pasteMode))settings.pasteMode="match";
+    if(!["plain","unnumbered"].includes(settings.pasteMode))settings.pasteMode="plain";
     if(!["changed","always"].includes(settings.review))settings.review="changed";
     Object.keys(initialStyles).forEach(k=>styles[k]=sanitizeStyle(styles[k]||initialStyles[k]));
     snippets=snippets.filter(s=>s&&typeof s.name==="string"&&typeof s.text==="string").map(s=>({name:s.name.slice(0,80),text:s.text.slice(0,20000)}));
@@ -175,6 +175,7 @@
     const section=document.createElement("div");section.className="pe-tools";
     const field=(name,label,type,value,extra)=>'<label>'+label+'<input data-pe-field="'+name+'" type="'+(type||"number")+'" value="'+escapeHtml(value)+'" '+(extra||"")+'></label>';
     section.innerHTML=[
+      '<details class="pe-section" open><summary>Text cleanup</summary><div class="pe-buttons"><button type="button" data-pe-action="remove-empty-lines">Remove empty lines</button><button type="button" data-pe-action="remove-double-spaces">Remove double spaces</button></div></details>',
       '<details class="pe-section" open><summary>Paragraph styles & formatting</summary><div class="pe-fields">',
       '<label>Style<select data-pe-field="preset">'+Object.keys(labels).map(k=>'<option value="'+k+'">'+labels[k]+'</option>').join("")+'</select></label>',
       field("font","Font","text","Kalimati",'list="peFontNames"'),
@@ -198,7 +199,7 @@
       '</div><div class="pe-buttons"><button type="button" data-pe-action="apply-layout">Apply page layout</button><button type="button" data-pe-action="reset-layout">Original layout</button><button type="button" data-pe-action="page-break">Page break before paragraph</button><button type="button" data-pe-action="remove-break">Remove page break</button><button type="button" data-pe-action="keep-group">Keep selected paragraphs together</button></div><small>Margins, page breaks and keep options are included in DOCX. Automatic page flow is determined by Word or your print browser.</small></details>',
       '<details class="pe-section"><summary>Reusable text snippets</summary><div class="pe-fields"><label class="pe-full">Saved snippets<select data-pe-field="snippet"></select></label>'+field("snippetName","Name","text","")+'<label class="pe-full">Text<textarea data-pe-field="snippetText" rows="4" placeholder="तपाईंको नियमित प्रयोग हुने व्यहोरा"></textarea></label></div><div class="pe-buttons"><button type="button" data-pe-action="insert-snippet">Insert at cursor</button><button type="button" data-pe-action="save-snippet">Save snippet</button><button type="button" data-pe-action="remove-snippet">Remove snippet</button></div></details>',
       '<details class="pe-section"><summary>Recovery versions</summary><label>Saved versions<select data-pe-field="version"></select></label><div class="pe-buttons"><button type="button" data-pe-action="snapshot">Save version now</button><button type="button" data-pe-action="compare-version">Compare</button><button type="button" data-pe-action="restore-version">Restore</button></div><small id="peRecoveryNote">Recovery versions are kept in this browser, separately for each case.</small></details>',
-      '<details class="pe-section"><summary>Customize editor</summary><div class="pe-fields"><label class="pe-check"><input data-pe-pref="toolbar" type="checkbox">Compact formatting toolbar</label><label class="pe-check"><input data-pe-pref="marks" type="checkbox">Show ¶ and tab marks</label><label class="pe-check"><input data-pe-pref="askPaste" type="checkbox">Ask how to paste</label><label>Default paste<select data-pe-pref="pasteMode"><option value="match">Paste as destination formatting</option><option value="keep">Paste as source formatting</option><option value="plain">Paste as text</option></select></label><label class="pe-check"><input data-pe-pref="recovery" type="checkbox">Automatic recovery versions</label>'+'<label>Save after idle (seconds)<input data-pe-pref="interval" type="number" min="10" max="300"></label><label>Versions per case<input data-pe-pref="retain" type="number" min="2" max="30"></label><label>Tab width (spaces)<input data-pe-pref="tabWidth" type="number" min="1" max="12"></label><label>Review imports<select data-pe-pref="review"><option value="changed">When text was edited</option><option value="always">Every re-import</option></select></label></div><small>Ctrl+B/I/U: formatting · Ctrl+Z/Y: undo/redo · Ctrl+F/H: find/replace · Ctrl+S: Save · Enter: new paragraph · Tab: insert tab.</small></details>'
+      '<details class="pe-section"><summary>Customize editor</summary><div class="pe-fields"><label class="pe-check"><input data-pe-pref="toolbar" type="checkbox">Compact formatting toolbar</label><label class="pe-check"><input data-pe-pref="marks" type="checkbox">Show ¶ and tab marks</label><label class="pe-check"><input data-pe-pref="askPaste" type="checkbox">Ask how to paste</label><label>Default paste<select data-pe-pref="pasteMode"><option value="plain">Paste as plain text</option><option value="unnumbered">Paste without paragraph number</option></select></label><label class="pe-check"><input data-pe-pref="recovery" type="checkbox">Automatic recovery versions</label>'+'<label>Save after idle (seconds)<input data-pe-pref="interval" type="number" min="10" max="300"></label><label>Versions per case<input data-pe-pref="retain" type="number" min="2" max="30"></label><label>Tab width (spaces)<input data-pe-pref="tabWidth" type="number" min="1" max="12"></label><label>Review imports<select data-pe-pref="review"><option value="changed">When text was edited</option><option value="always">Every re-import</option></select></label></div><small>Ctrl+B/I/U: formatting · Ctrl+Z/Y: undo/redo · Ctrl+F/H: find/replace · Ctrl+S: Save · Enter: new paragraph · Tab: insert tab.</small></details>'
     ].join("");
     panel.querySelector(".cob-tools-status").before(section);
     const continuation=document.createElement("button");continuation.type="button";continuation.textContent="Continue previous numbering";continuation.addEventListener("mousedown",e=>e.preventDefault());continuation.addEventListener("click",()=>transact(()=>options.continueNumbering?.()));
@@ -450,7 +451,18 @@
       }
       selectRange(caret,true);
     }
+    function stripParagraphNumber(text) {
+      return String(text).replace(/^\s*(?:(?:[0-9०-९]+(?:[.．][0-9०-९]+)*|[A-Za-z]|[ivxlcdmIVXLCDM]+|[क-ह])\s*[.)।ः:、]|\((?:[0-9०-९]+|[A-Za-z]|[क-ह])\)|[•●▪◦])(?:[ \t\u00a0]+|$)/u, "");
+    }
     function sanitizedPaste(html, mode, text) {
+      if(mode==="unnumbered") {
+        if(html){
+          const source=document.createElement("template");source.innerHTML=html;
+          source.content.querySelectorAll('[data-cob-list-marker],.MsoListIgnore,[style*="mso-list:Ignore"],[style*="mso-list: Ignore"],script,style').forEach(n=>n.remove());
+          return sanitizedPaste(source.innerHTML,"match",text).map(p=>newParagraph(stripParagraphNumber(p.textContent)));
+        }
+        return String(text||"").replace(/\r/g,"").split("\n").map(line=>newParagraph(stripParagraphNumber(line)));
+      }
       if(mode==="plain"||!html)return String(text||"").replace(/\r/g,"").split("\n").map(newParagraph);
       const template=document.createElement("template");template.innerHTML=html;
       template.content.querySelectorAll("script,style,iframe,object,embed,svg,math,img,video,audio,link,meta,form,input,button,textarea").forEach(n=>n.remove());
@@ -572,6 +584,23 @@
     section.querySelectorAll("button").forEach(button=>button.addEventListener("mousedown",e=>e.preventDefault()));
     toolbar.querySelectorAll("button").forEach(button=>button.addEventListener("mousedown",e=>e.preventDefault()));
     function runAction(action) {
+      if(action==="remove-empty-lines")return transact(()=>{
+        draft.querySelectorAll("p,[data-docx-p]").forEach(p=>{
+          if(!p.textContent.replace(/[\s\u200b\ufeff]/g,"")&&!p.querySelector("img,table,hr,[data-cob-list-marker]"))p.remove();
+        });
+        if(!draft.children.length)draft.append(newParagraph(""));
+        tell("Empty lines removed. Undo is available.");
+      });
+      if(action==="remove-double-spaces")return transact(()=>{
+        draft.querySelectorAll("p,li,[data-docx-p]").forEach(p=>{
+          const walker=document.createTreeWalker(p,NodeFilter.SHOW_TEXT);let node,previousSpace=false;
+          while((node=walker.nextNode())){
+            if(node.parentElement.closest('[data-cob-list-marker],[data-pe-tab]')){previousSpace=false;continue;}
+            node.nodeValue=node.nodeValue.replace(/[ \u00a0]+/g," ").replace(/^ /,()=>previousSpace?"":" ");
+            if(node.nodeValue)previousSpace=/[ \u00a0]$/.test(node.nodeValue);
+          }
+        });tell("Double spaces removed. Undo is available.");
+      });
       if(action==="undo")return undo(-1);if(action==="redo")return undo(1);
       if(action==="marks"){settings.marks=!settings.marks;persistPreferences();viewPreferences();return;}
       if(action==="find"){options.showTools();section.querySelector("#peFindSection").open=true;fieldNode("query").focus();return;}
@@ -638,7 +667,7 @@
       inlineStyle.textDecoration=Array.from(decorations).join(" ")||"none";
       let mode=settings.pasteMode;
       if(settings.askPaste)mode=await dialog("Paste options",card=>{const p=document.createElement("p");p.textContent="Choose how this text should appear in your document.";card.append(p);},[
-        {label:"Paste as text",value:"plain"},{label:"Paste as source formatting",value:"keep"},{label:"Paste as destination formatting",value:"match",primary:true},{label:"Cancel",value:null}
+        {label:"Paste as plain text",value:"plain",primary:true},{label:"Paste without paragraph number",value:"unnumbered"},{label:"Cancel",value:null}
       ]);
       if(!mode)return;
       transact(()=>{
@@ -657,3 +686,4 @@
   root.COBPreviewEnhancements=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
+

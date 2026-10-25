@@ -1332,16 +1332,16 @@
             s(t) +
             '" class="cob-party"><span class="cob-party-name">' +
             s(a) +
-            '</span><span class="cob-party-leader" aria-hidden="true"></span><span class="cob-party-role">' +
+            '</span><span class="cob-party-leader" aria-hidden="true"></span><span class="cob-party-role" style="font-weight:700;text-decoration:underline"><b><u>' +
             s(t) +
-            "</span></p>"
+            "</u></b></span></p>"
           );
         }
         function partyBlock(name, role, layout) {
           if ("stacked" !== layout) return X(name, role);
           const partyName = name || n;
           return (
-            '<p data-docx-p="1" data-align="left" data-bold="0" data-underline="1" data-first-line="0" class="cob-left cob-underline cob-party-stacked-role">' +
+            '<p data-docx-p="1" data-align="left" data-bold="1" data-underline="1" data-first-line="0" style="font-weight:700;text-decoration:underline" class="cob-left cob-bold cob-underline cob-party-stacked-role">' +
             s(role) +
             '</p><p data-docx-p="1" data-align="left" data-bold="0" data-underline="0" data-first-line="0" data-party="1" data-party-layout="stacked" data-party-name="' +
             s(partyName) +
@@ -1980,8 +1980,8 @@
                             '"/></w:rPr><w:tab/></w:r>' +
                             de(
                               e.dataset.partyRole || "",
-                              !1,
-                              !1,
+                              !0,
+                              !0,
                               fontHalfPoints,
                             ))
                         : d &&
@@ -2401,4 +2401,5 @@
       })(e));
   }
 })();
+
 

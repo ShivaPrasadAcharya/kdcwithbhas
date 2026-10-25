@@ -61,8 +61,14 @@ for(const format of ["<w:b/>","<w:i/>",'<w:u w:val="single"/>',"<w:strike/>"])as
 assert.ok(nestedXml.includes("सबै ढाँचा"));
 const index=fs.readFileSync("index.html","utf8");
 assert.ok(index.indexOf('editorRuntime.async = false')<index.indexOf('runtime.async = false'));
-assert.ok(index.includes('preview-editor.js?v=6'));
+assert.ok(index.includes('preview-editor.js?v=7'));
 assert.ok(source.includes('previewEnhancer?.open(A,n)'));
 assert.ok(source.includes('previewEnhancer.reviewImport("bahas"'));
 assert.ok(source.includes('previewEnhancer.reviewImport("adesh"'));
 console.log("Passed normalized-search mapping, customization bounds, page geometry, and DOCX formatting checks (including nested B/U/I/S).");
+
+
+const editorSource=fs.readFileSync("preview-editor.js","utf8");
+const strip=vm.runInNewContext("("+editorSource.match(/function stripParagraphNumber\(text\) \{[\s\S]*?\n    \}/)[0]+")");
+for(const [input,expected] of [["१. तथ्य","तथ्य"],["10. Text","Text"],["१.२) तथ्य","तथ्य"],["(क) तथ्य","तथ्य"],["iv. Text","Text"],["२०८३ साल","२०८३ साल"],["3.14 value","3.14 value"]])assert.equal(strip(input),expected);
+console.log("Passed manual paragraph numbering and ordinary-number preservation checks.");

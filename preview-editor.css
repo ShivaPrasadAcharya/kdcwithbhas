@@ -75,3 +75,7 @@
 
 /* Default page margin; custom page layouts override this inline. */
 @media screen{.cob-draft{padding-left:27mm}}
+
+
+/* Keep tool dismissal available while the tools scroll. */
+.cob-tools-head{position:sticky;top:-13px;z-index:5;background:#fffdfa;padding:10px 0;}

@@ -677,6 +677,7 @@
     .preparation-fields input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(197,145,50,.15); }
     .preparation-fields small { grid-column: 1 / -1; color: var(--muted); font-size: .72rem; }
 
+    .row-filter-control[hidden] { display: none !important; }
     .row-filter-control {
       display: grid;
       gap: 9px;
@@ -1075,7 +1076,7 @@
 
           </details>
 
-          <div class="row-filter-control">
+          <div class="row-filter-control" hidden inert>
             <button type="button" class="btn row-filter-toggle" id="rowFilterToggle" aria-expanded="false" aria-controls="rowFilterPanel" disabled>Filter Causelist Tables &amp; Rows</button>
             <section class="row-filter-panel" id="rowFilterPanel" aria-label="प्रत्येक causelist table का rows छान्नुहोस्" hidden>
               <p class="row-filter-intro">प्रत्येक table मा <b>ALL+</b> default हो। <b>ALL+</b> ले सबै content राख्छ, <b>ALL</b> ले हेर्न नभ्याइने/हेर्न नमिल्ने/स्थगित rows हटाउँछ, <b>ALL-</b> ले table नै हटाउँछ, र <b>Custom</b> मा serial हरू comma ले छुट्याएर लेख्नुहोस्—जस्तै: <b>क, ग, २, ४</b>।</p>
@@ -2893,7 +2894,7 @@
         const editorStyle = doc.createElement("link");
         editorStyle.id = "preview-editor-style";
         editorStyle.rel = "stylesheet";
-        editorStyle.href = "preview-editor.css?v=7";
+        editorStyle.href = "preview-editor.css?v=8";
         head.appendChild(editorStyle);
         const syncStyle = doc.createElement("link");
         syncStyle.id = "cause-list-firebase-sync-style";
@@ -2918,13 +2919,13 @@
         const editorRuntime = doc.createElement("script");
         editorRuntime.id = "preview-editor-runtime";
         editorRuntime.async = false;
-        editorRuntime.src = "preview-editor.js?v=6";
+        editorRuntime.src = "preview-editor.js?v=7";
         (doc.body || doc.documentElement).appendChild(editorRuntime);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";
         runtime.async = false;
         runtime.setAttribute("data-version", "preview-editor-4");
-        runtime.src = "cause-list-runtime.js?v=input-layout-1";
+        runtime.src = "cause-list-runtime.js?v=preview-cleanup-2";
         (doc.body || doc.documentElement).appendChild(runtime);
         const proofreaderRuntime = doc.createElement("script");
         proofreaderRuntime.id = "nepali-proofreader-engine-runtime";
@@ -3851,4 +3852,5 @@
   <script id="cause-list-firebase-sync-runtime" defer src="firebase-sync.js?v=5"></script>
 </body>
 </html>
+
 
