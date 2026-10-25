@@ -92,7 +92,7 @@
 @media print{.pe-header-tools,.cob-draft [data-pe-paragraph-mark]{display:none!important}}
 
 /* One compact row; narrow screens can scroll the ribbon horizontally. */
-.cob-head{flex-wrap:nowrap;justify-content:flex-start;gap:5px;min-height:38px;padding:5px 9px;border-bottom-width:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#c59132 #6d1724}
+.cob-head{box-sizing:border-box;flex-wrap:nowrap;justify-content:flex-start;gap:5px;min-height:35px;padding:3px 8px;border-bottom-width:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#c59132 #6d1724}
 .cob-head::-webkit-scrollbar{height:4px}
 .cob-head::-webkit-scrollbar-thumb{background:#c59132;border-radius:4px}
 .cob-head #cobTitle{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
