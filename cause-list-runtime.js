@@ -1366,7 +1366,7 @@
           return (
             (t.innerHTML = String(e || "")),
             t.content
-              .querySelectorAll("script,style,iframe,object,embed,link,meta")
+              .querySelectorAll("[data-pe-paragraph-mark],script,style,iframe,object,embed,link,meta")
               .forEach(function (e) {
                 e.remove();
               }),

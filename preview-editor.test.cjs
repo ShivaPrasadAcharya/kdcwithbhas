@@ -61,7 +61,7 @@ for(const format of ["<w:b/>","<w:i/>",'<w:u w:val="single"/>',"<w:strike/>"])as
 assert.ok(nestedXml.includes("सबै ढाँचा"));
 const index=fs.readFileSync("index.html","utf8");
 assert.ok(index.indexOf('editorRuntime.async = false')<index.indexOf('runtime.async = false'));
-assert.ok(index.includes('preview-editor.js?v=8'));
+assert.ok(index.includes('preview-editor.js?v=9'));
 assert.ok(source.includes('previewEnhancer?.open(A,n)'));
 assert.ok(source.includes('previewEnhancer.reviewImport("bahas"'));
 assert.ok(source.includes('previewEnhancer.reviewImport("adesh"'));
@@ -72,3 +72,15 @@ const editorSource=fs.readFileSync("preview-editor.js","utf8");
 const strip=vm.runInNewContext("("+editorSource.match(/function stripParagraphNumber\(text\) \{[\s\S]*?\n    \}/)[0]+")");
 for(const [input,expected] of [["१. तथ्य","तथ्य"],["10. Text","Text"],["१.२) तथ्य","तथ्य"],["(क) तथ्य","तथ्य"],["iv. Text","Text"],["२०८३ साल","२०८३ साल"],["3.14 value","3.14 value"]])assert.equal(strip(input),expected);
 console.log("Passed manual paragraph numbering and ordinary-number preservation checks.");
+
+// Paragraph-only format transfer must preserve every character style and content.
+const paragraphSource={dataset:{peTabs:"36, 72",peKeepNext:"1"}};
+const paragraphComputed={textAlign:"right",lineHeight:"30px",fontSize:"20px",marginTop:"8px",marginBottom:"12px",marginLeft:"24px",marginRight:"16px",textIndent:"-8px",tabSize:"4",fontWeight:"700",color:"rgb(255, 0, 0)",fontFamily:"Kalimati"};
+const paragraphFormat=editor.captureParagraphFormat(paragraphSource,paragraphComputed);
+const paragraphTarget={style:{fontWeight:"400",fontStyle:"italic",textDecoration:"underline",fontFamily:"Arial",fontSize:"11pt",color:"blue"},dataset:{cobList:"number"},textContent:"Unchanged text"};
+editor.applyParagraphFormatTo(paragraphTarget,paragraphFormat);
+assert.equal(paragraphTarget.style.textAlign,"right");assert.equal(paragraphTarget.style.lineHeight,"1.5");assert.equal(paragraphTarget.style.marginLeft,"24px");
+assert.equal(paragraphTarget.style.fontWeight,"400");assert.equal(paragraphTarget.style.fontStyle,"italic");assert.equal(paragraphTarget.style.textDecoration,"underline");assert.equal(paragraphTarget.style.fontFamily,"Arial");assert.equal(paragraphTarget.style.fontSize,"11pt");assert.equal(paragraphTarget.style.color,"blue");assert.equal(paragraphTarget.textContent,"Unchanged text");assert.equal(paragraphTarget.dataset.cobList,"number");assert.equal(paragraphTarget.dataset.peTabs,"36, 72");
+const paragraphPayload=editor.sanitizeParagraphFormat({style:{fontWeight:"700",fontSize:"72pt",color:"red",marginLeft:"url(x)",textAlign:"left"},data:{bold:"1",peTabs:"36,invalid,9000",peKeepNext:"1"}});
+assert.deepEqual(paragraphPayload.style,{textAlign:"left"});assert.equal(paragraphPayload.data.peTabs,"36");assert.equal(paragraphPayload.data.bold,undefined);
+console.log("Passed paragraph-only transfer: character styles, text and numbering preserved; paragraph geometry and tab stops copied.");

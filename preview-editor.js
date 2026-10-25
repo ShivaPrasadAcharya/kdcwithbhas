@@ -69,6 +69,41 @@
     });
     return result;
   }
+  const paragraphStyleKeys = ["textAlign","lineHeight","marginTop","marginBottom","marginLeft","marginRight","textIndent","tabSize"];
+  const paragraphDataKeys = ["peTabs","peKeepNext","peKeepLines","pePageBefore","cobCustomIndent","cobCustomFirst","docxLeft","firstLine"];
+  function sanitizeParagraphFormat(value) {
+    const format={style:{},data:{}};
+    if(!value||typeof value!=="object")return format;
+    paragraphStyleKeys.forEach(name=>{
+      const v=String(value.style?.[name]??"").trim();
+      const valid=name==="textAlign"?/^(left|right|center|justify|start|end)$/.test(v):/^(?:normal|-?\d+(?:\.\d+)?(?:px|pt|mm|cm|in|em|rem|%)?)$/.test(v);
+      if(valid)format.style[name]=v;
+    });
+    paragraphDataKeys.forEach(name=>{
+      const v=String(value.data?.[name]??"");
+      if(name==="peTabs")format.data[name]=v.split(",").map(Number).filter(n=>Number.isFinite(n)&&n>0&&n<=720).join(", ");
+      else if(["peKeepNext","peKeepLines","pePageBefore"].includes(name))format.data[name]=v==="1"?"1":"0";
+      else if(v!==""&&Number.isFinite(Number(v))&&Math.abs(Number(v))<=14400)format.data[name]=v;
+    });
+    return format;
+  }
+  function captureParagraphFormat(block, computed) {
+    const value={style:{},data:{}};
+    paragraphStyleKeys.forEach(name=>value.style[name]=computed[name]);
+    const font=parseFloat(computed.fontSize),line=parseFloat(computed.lineHeight);
+    if(font>0&&line>0)value.style.lineHeight=String(line/font);
+    paragraphDataKeys.forEach(name=>value.data[name]=block.dataset[name]);
+    value.data.cobCustomIndent=String((parseFloat(computed.marginLeft)||0)*.75);
+    value.data.cobCustomFirst=String((parseFloat(computed.textIndent)||0)*.75);
+    value.data.docxLeft=String(Math.round(Number(value.data.cobCustomIndent)*20));
+    value.data.firstLine=value.data.cobCustomFirst;
+    return sanitizeParagraphFormat(value);
+  }
+  function applyParagraphFormatTo(block, value) {
+    const format=sanitizeParagraphFormat(value);
+    Object.assign(block.style,format.style);
+    Object.assign(block.dataset,format.data);
+  }
   function attach(options) {
     const draft=options.draft, panel=options.panel, backdrop=options.backdrop;
     if(!draft||!panel||draft.dataset.previewEditorReady)return null;
@@ -93,6 +128,46 @@
     const toolbar=document.createElement("div");toolbar.className="pe-toolbar";toolbar.setAttribute("role","toolbar");toolbar.setAttribute("aria-label","Text formatting");
     toolbar.innerHTML='<select aria-label="Paragraph style" class="pe-quick-style">'+Object.keys(labels).map(k=>'<option value="'+k+'">'+labels[k]+'</option>').join("")+'</select><button type="button" data-pe-action="apply-style">Apply style</button><button type="button" data-pe-inline="bold" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-pe-inline="italic" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-pe-inline="underline" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-pe-action="undo" aria-label="Undo">↶</button><button type="button" data-pe-action="redo" aria-label="Redo">↷</button><button type="button" data-pe-action="find">Find</button><button type="button" data-pe-action="marks" aria-label="Show formatting marks" aria-pressed="false">¶</button>';
     draft.parentElement.before(toolbar,status);
+    const headerTools=document.createElement("div");headerTools.className="pe-header-tools";headerTools.setAttribute("role","toolbar");headerTools.setAttribute("aria-label","Preview actions");
+    ["undo","redo","find","marks"].forEach(action=>headerTools.append(toolbar.querySelector('[data-pe-action="'+action+'"]')));
+    const applyParagraphButton=document.createElement("button");applyParagraphButton.type="button";applyParagraphButton.dataset.peAction="apply-paragraph-format";applyParagraphButton.textContent="Apply ¶";applyParagraphButton.setAttribute("aria-label","Apply paragraph formatting only");applyParagraphButton.title="Apply copied paragraph formatting without changing character formatting";applyParagraphButton.hidden=true;headerTools.append(applyParagraphButton);
+    backdrop.querySelector(".cob-head .cob-close").before(headerTools);
+    let copiedParagraphFormat=null,selectedParagraphMark=null;
+    function clearParagraphMarkSelection(){selectedParagraphMark?.classList.remove("pe-mark-selected");selectedParagraphMark?.setAttribute("aria-pressed","false");selectedParagraphMark=null;}
+    function syncParagraphMarks(){
+      const marks=Array.from(draft.querySelectorAll("[data-pe-paragraph-mark]"));
+      if(!settings.marks){marks.forEach(mark=>mark.remove());clearParagraphMarkSelection();return;}
+      const paragraphs=Array.from(draft.querySelectorAll("p,li,h1,h2,h3,h4,h5,h6,[data-docx-p]")).filter(p=>!p.querySelector("p,li,[data-docx-p]"));
+      const keep=new Set();
+      paragraphs.forEach(p=>{
+        let mark=Array.from(p.children).find(n=>n.hasAttribute("data-pe-paragraph-mark"));
+        if(!mark){mark=document.createElement("span");mark.dataset.peParagraphMark="1";mark.contentEditable="false";mark.setAttribute("role","button");mark.tabIndex=0;mark.setAttribute("aria-label","Copy paragraph formatting only");mark.setAttribute("aria-pressed","false");mark.title="Select ¶ to copy paragraph formatting only. Select target paragraph(s), then Apply ¶.";}
+        if(p.lastChild!==mark)p.append(mark);keep.add(mark);
+      });
+      marks.filter(mark=>!keep.has(mark)).forEach(mark=>mark.remove());
+      if(selectedParagraphMark&&!draft.contains(selectedParagraphMark))clearParagraphMarkSelection();
+    }
+    function selectParagraphMark(mark){
+      const block=blockFor(mark);if(!block)return;
+      clearSelections();clearParagraphMarkSelection();copiedParagraphFormat=captureParagraphFormat(block,getComputedStyle(block));selectedParagraphMark=mark;mark.classList.add("pe-mark-selected");mark.setAttribute("aria-pressed","true");applyParagraphButton.hidden=false;
+      const range=document.createRange();range.selectNode(mark);selectRange(range,true);mark.focus({preventScroll:true});
+      tell("Paragraph formatting copied. Select target paragraph(s), then Apply ¶. Ctrl+C / Ctrl+V also copies and applies only paragraph formatting.");
+    }
+    function applyCopiedParagraphFormat(value=copiedParagraphFormat){
+      if(!value)return;
+      const blocks=blocksFor(activeRange());if(!blocks.length){tell("Select the target paragraph(s) first.");return;}
+      transact(()=>{blocks.forEach(block=>applyParagraphFormatTo(block,value));updateTabs();});
+      clearParagraphMarkSelection();tell("Paragraph formatting applied. Character formatting preserved. Undo is available.");
+    }
+    draft.addEventListener("mousedown",e=>{const mark=e.target.closest("[data-pe-paragraph-mark]");if(mark){e.preventDefault();selectParagraphMark(mark);}else clearParagraphMarkSelection();});
+    draft.addEventListener("keydown",e=>{const mark=e.target.closest("[data-pe-paragraph-mark]");if(mark&&["Enter"," "].includes(e.key)){e.preventDefault();e.stopImmediatePropagation();selectParagraphMark(mark);}},true);
+    draft.addEventListener("copy",e=>{
+      if(!selectedParagraphMark||!copiedParagraphFormat||!e.clipboardData)return;
+      const range=getSelection()?.rangeCount?getSelection().getRangeAt(0):null;
+      if(!range||range.startContainer!==selectedParagraphMark.parentNode||range.endContainer!==selectedParagraphMark.parentNode||range.endOffset-range.startOffset!==1||range.startContainer.childNodes[range.startOffset]!==selectedParagraphMark)return;
+      e.preventDefault();e.clipboardData.setData("text/plain","");e.clipboardData.setData("text/html",'<span data-pe-paragraph-format="'+escapeHtml(JSON.stringify(copiedParagraphFormat))+'"></span>');
+      tell("Paragraph formatting copied to the clipboard. Paste onto the target paragraph(s).");
+    });
     const fullscreenButton=document.createElement("button");
     fullscreenButton.type="button";fullscreenButton.className="cob-btn pe-fullscreen";
     fullscreenButton.textContent="⛶";fullscreenButton.setAttribute("aria-label","Fullscreen preview");
@@ -212,7 +287,8 @@
     }
     function viewPreferences() {
       toolbar.hidden=!settings.toolbar;draft.classList.toggle("pe-show-marks",settings.marks);draft.style.tabSize=String(settings.tabWidth);
-      toolbar.querySelector('[data-pe-action="marks"]').setAttribute("aria-pressed",String(settings.marks));
+      headerTools.querySelector('[data-pe-action="marks"]').setAttribute("aria-pressed",String(settings.marks));
+      syncParagraphMarks();
       section.querySelectorAll("[data-pe-pref]").forEach(el=>{const value=settings[el.dataset.pePref];el.type==="checkbox"?el.checked=!!value:el.value=String(value);});
     }
     function styleForm(value) {const s=sanitizeStyle(value);Object.keys(s).forEach(k=>{const el=fieldNode(k);if(el)el.type==="checkbox"?el.checked=s[k]:el.value=s[k];});}
@@ -350,7 +426,7 @@
       const s=snapshot();if(historyIndex>=0&&fingerprint(history[historyIndex])===fingerprint(s))return;
       history=history.slice(0,historyIndex+1);history.push(s);if(history.length>100)history.shift();historyIndex=history.length-1;updateUndo();
     }
-    function updateUndo() {toolbar.querySelector('[data-pe-action="undo"]').disabled=historyIndex<=0;toolbar.querySelector('[data-pe-action="redo"]').disabled=historyIndex>=history.length-1;}
+    function updateUndo() {headerTools.querySelector('[data-pe-action="undo"]').disabled=historyIndex<=0;headerTools.querySelector('[data-pe-action="redo"]').disabled=historyIndex>=history.length-1;}
     function applyLayout(value) {
       layout=value?sanitizeLayout(value):null;
       if(layout) {
@@ -465,7 +541,7 @@
       }
       if(mode==="plain"||!html)return String(text||"").replace(/\r/g,"").split("\n").map(newParagraph);
       const template=document.createElement("template");template.innerHTML=html;
-      template.content.querySelectorAll("script,style,iframe,object,embed,svg,math,img,video,audio,link,meta,form,input,button,textarea").forEach(n=>n.remove());
+      template.content.querySelectorAll("[data-pe-paragraph-mark],script,style,iframe,object,embed,svg,math,img,video,audio,link,meta,form,input,button,textarea").forEach(n=>n.remove());
       const output=[];
       function inlineContent(node,parent) {
         if(node.nodeType===3){parent.append(document.createTextNode(node.nodeValue));return;}
@@ -571,7 +647,7 @@
       const last=versions().at(-1);
       if(last&&(!stored?.savedAt||new Date(last.time)>new Date(stored.savedAt)))tell("A newer recovery version is available in Tools → Recovery versions.");
     }
-    function close(){if(key&&settings.recovery)saveVersion("Before closing");clearTimeout(historyTimer);clearTimeout(recoveryTimer);pendingDialog?.close(null);leaveFullscreen();cleanupSelect.value="keep";clearSelections();key="";lastRange=null;clearHighlights();}
+    function close(){if(key&&settings.recovery)saveVersion("Before closing");clearTimeout(historyTimer);clearTimeout(recoveryTimer);pendingDialog?.close(null);leaveFullscreen();cleanupSelect.value="keep";clearSelections();clearParagraphMarkSelection();key="";lastRange=null;clearHighlights();}
     section.addEventListener("change",e=>{
       if(e.target.matches("[data-pe-pref]")){
         const pref=e.target.dataset.pePref;settings[pref]=e.target.type==="checkbox"?e.target.checked:typeof defaults[pref]==="number"?clamp(e.target.value,pref==="retain"?2:pref==="tabWidth"?1:10,pref==="retain"?30:pref==="tabWidth"?12:300,defaults[pref]):e.target.value;
@@ -582,8 +658,9 @@
     });
     fieldNode("query").addEventListener("input",()=>search(false));
     section.querySelectorAll("button").forEach(button=>button.addEventListener("mousedown",e=>e.preventDefault()));
-    toolbar.querySelectorAll("button").forEach(button=>button.addEventListener("mousedown",e=>e.preventDefault()));
+    [toolbar,headerTools].forEach(bar=>bar.querySelectorAll("button").forEach(button=>button.addEventListener("mousedown",e=>e.preventDefault())));
     function runAction(action) {
+      if(action==="apply-paragraph-format")return applyCopiedParagraphFormat();
       if(action==="remove-punctuation-spaces")return transact(()=>{
         draft.querySelectorAll("p,li,h1,h2,h3,h4,h5,h6,[data-docx-p]").forEach(p=>{
           if(p.querySelector("p,li,[data-docx-p]"))return;
@@ -637,12 +714,12 @@
       if(action==="restore-version"){const v=selectedVersion();if(v){saveVersion("Before restore");rememberHistory();restoreSnapshot(v.snapshot);rememberHistory();tell("Recovery version restored. Undo is available.");}return;}
     }
     section.addEventListener("click",e=>{const b=e.target.closest("[data-pe-action]");if(b)runAction(b.dataset.peAction);});
-    toolbar.addEventListener("click",e=>{const b=e.target.closest("button");if(b?.dataset.peInline)transact(()=>toggleInline(b.dataset.peInline));else if(b?.dataset.peAction)runAction(b.dataset.peAction);});
+    [toolbar,headerTools].forEach(bar=>bar.addEventListener("click",e=>{const b=e.target.closest("button");if(b?.dataset.peInline)transact(()=>toggleInline(b.dataset.peInline));else if(b?.dataset.peAction)runAction(b.dataset.peAction);}));
     document.addEventListener("selectionchange",saveRange);
     draft.addEventListener("compositionstart",()=>composing=true);
     draft.addEventListener("compositionend",()=>{composing=false;rememberHistory();scheduleRecovery();});
     draft.addEventListener("input",()=>{
-      clearSelections();
+      clearSelections();syncParagraphMarks();
       updateTabs();if(restoring)return;clearHighlights();findResults=[];showCount();
       clearTimeout(historyTimer);if(!composing)historyTimer=setTimeout(rememberHistory,350);
       scheduleRecovery();
@@ -671,6 +748,11 @@
       if(!e.clipboardData)return;e.preventDefault();if(composing)return;
       const text=e.clipboardData.getData("text/plain"),html=e.clipboardData.getData("text/html"),range=activeRange();
       if(!range)return;
+      if(html){
+        const metadata=document.createElement("template");metadata.innerHTML=html;
+        const format=metadata.content.querySelector("[data-pe-paragraph-format]");
+        if(format){try{const value=sanitizeParagraphFormat(JSON.parse(format.dataset.peParagraphFormat));if(Object.keys(value.style).length)applyCopiedParagraphFormat(value);}catch(_){tell("This paragraph format could not be read.");}return;}
+      }
       const destination=blockFor(range.startContainer),at=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;
       const destinationStyle=at&&getComputedStyle(at),inlineStyle={};
       if(destinationStyle)["fontFamily","fontSize","fontWeight","fontStyle","textDecoration","color","backgroundColor","verticalAlign"].forEach(k=>{inlineStyle[k]=destinationStyle[k];});
@@ -695,7 +777,7 @@
     refreshSnippets();styleForm(styles.normal);viewPreferences();updateUndo();
     return {open,close,getLayout:()=>layout?Object.assign({},layout):null,reviewImport,orderParagraphs,imported:markImported,checkpoint:rememberHistory,refresh:()=>{applyLayout(layout);viewPreferences();updateTabs();},saveVersion};
   }
-  const api={attach,findOffsets,sanitizeStyle,sanitizeLayout,pageGeometry,normalized,mergeSelectionSpans};
+  const api={attach,captureParagraphFormat,applyParagraphFormatTo,sanitizeParagraphFormat,findOffsets,sanitizeStyle,sanitizeLayout,pageGeometry,normalized,mergeSelectionSpans};
   root.COBPreviewEnhancements=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);

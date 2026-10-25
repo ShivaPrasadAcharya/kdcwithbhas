@@ -152,3 +152,6 @@
 @media print {
   .cpr-ribbon { display: none !important; }
 }
+
+
+.cpr-link[href*="snap-drop.net"],.cpr-link[href*="send-anywhere.com"]{color:#3b2910;background:#fff1ac;border-color:#f1d674;font-weight:900;font-size:16px}

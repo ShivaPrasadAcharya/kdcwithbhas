@@ -269,6 +269,8 @@
       white-space: nowrap;
     }
 
+    .readme-btn[href*="send-anywhere.com"] { color:#3b2910; background:#fff1ac; border-color:#f1d674; font-weight:900; font-size:1.15rem; }
+
     .readme-btn:hover,
     .readme-btn:focus-visible { color: #3b2910; background: #f6d98e; outline: none; }
 
@@ -2489,7 +2491,7 @@
           '\x3Ciframe title="' + escapeAttribute(item.label) + ' को पेशी सूची" src="' + escapeAttribute(item.href) + '">\x3C/iframe>\x3C/section>'
         ).join("");
         return '\x3C!doctype html>\x3Chtml lang="ne">\x3Chead>\x3Cmeta charset="utf-8">\x3Cmeta name="viewport" content="width=device-width,initial-scale=1">' +
-          '\x3Ctitle>' + escapeAttribute(monthLabel) + ' — सबै पेशी सूची\x3C/title>\x3Clink rel="stylesheet" href="cause-list-ribbon.css?v=compact-editor-1">\x3Cstyle>' +
+          '\x3Ctitle>' + escapeAttribute(monthLabel) + ' — सबै पेशी सूची\x3C/title>\x3Clink rel="stylesheet" href="cause-list-ribbon.css?v=transfer-highlight-2">\x3Cstyle>' +
           'html{color:#2f2724;background:#f4efe8;font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}body{margin:0;padding:18px}' +
           'header{position:relative;z-index:5;margin:-18px -18px 18px;padding:14px 20px;color:#fff;background:#5f1723;border-bottom:3px solid #c59132}' +
           'header h1{margin:0;font-size:1.12rem}.month-item{margin:0 0 22px;padding:12px;background:#fff;border:1px solid #d5cabe;border-radius:12px;box-shadow:0 8px 24px rgba(56,35,30,.08)}' +
@@ -2831,9 +2833,15 @@
             ["branchOfficer", "computerOperator", "benchNumber"].forEach((name) => {
               if (typeof details[name] === "string") savedPreparation[name] = details[name];
             });
+          } else {
+            const details = inputHistory[0]?.preparationDetails || {};
+            ["branchOfficer", "computerOperator", "benchNumber"].forEach((name) => {
+              if (typeof details[name] === "string") savedPreparation[name] = details[name];
+            });
           }
         } catch (error) { /* Keep the checked default and empty inputs. */ }
         applySavedPreparation();
+        persistPreparation();
       }
 
       function saveInputSession(result) {
@@ -2927,7 +2935,7 @@
         const ribbonStyle = doc.createElement("link");
         ribbonStyle.id = "cause-list-ribbon-style";
         ribbonStyle.rel = "stylesheet";
-        ribbonStyle.href = "cause-list-ribbon.css?v=compact-editor-1";
+        ribbonStyle.href = "cause-list-ribbon.css?v=transfer-highlight-2";
         head.appendChild(ribbonStyle);
         const style = doc.createElement("link");
         style.id = "court-order-builder-style";
@@ -2937,7 +2945,7 @@
         const editorStyle = doc.createElement("link");
         editorStyle.id = "preview-editor-style";
         editorStyle.rel = "stylesheet";
-        editorStyle.href = "preview-editor.css?v=8";
+        editorStyle.href = "preview-editor.css?v=9";
         head.appendChild(editorStyle);
         const syncStyle = doc.createElement("link");
         syncStyle.id = "cause-list-firebase-sync-style";
@@ -2962,13 +2970,13 @@
         const editorRuntime = doc.createElement("script");
         editorRuntime.id = "preview-editor-runtime";
         editorRuntime.async = false;
-        editorRuntime.src = "preview-editor.js?v=8";
+        editorRuntime.src = "preview-editor.js?v=9";
         (doc.body || doc.documentElement).appendChild(editorRuntime);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";
         runtime.async = false;
         runtime.setAttribute("data-version", "preview-editor-4");
-        runtime.src = "cause-list-runtime.js?v=party-layout-3";
+        runtime.src = "cause-list-runtime.js?v=paragraph-marks-4";
         (doc.body || doc.documentElement).appendChild(runtime);
         const proofreaderRuntime = doc.createElement("script");
         proofreaderRuntime.id = "nepali-proofreader-engine-runtime";
@@ -3744,6 +3752,7 @@
       });
       [branchOfficerInput, computerOperatorInput, benchNumberInput].forEach((input) => {
         input.addEventListener("input", () => persistPreparation(true));
+        input.addEventListener("blur", () => persistPreparation(true));
         input.addEventListener("change", () => {
           persistPreparation(true);
           if (sourceCode.trim() && !causeDateLoadController) runFilter();
@@ -3882,6 +3891,9 @@
       });
       readInputHistory();
       restorePreparation();
+      window.addEventListener("pagehide", () => {
+        if (usePreviousPreparation.checked || Object.values(readPreparationDetails()).some(Boolean)) persistPreparation(true);
+      });
       const openSharedRibbonSearch = () => {
         const params = new URLSearchParams(location.search);
         const query = String(params.get("search") || "").trim();
