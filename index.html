@@ -772,6 +772,12 @@
     .date-loader small { color: var(--muted); font-size: .72rem; line-height: 1.5; }
     .date-lookup-notice { margin: 0; padding: 11px 12px; color: #7a3415; background: #fff1d6; border: 1px solid #e7c27e; border-radius: 9px; font-size: .82rem; line-height: 1.6; }
     .date-lookup-notice[hidden] { display: none; }
+    .cause-date-popup { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); z-index: 1500; display: flex; align-items: flex-start; gap: 14px; width: max-content; max-width: calc(100vw - 28px); padding: 13px 15px; border: 1px solid; border-radius: 10px; box-shadow: 0 10px 30px rgba(25,35,25,.2); font-size: .92rem; font-weight: 800; line-height: 1.6; }
+    .cause-date-popup[hidden] { display: none; }
+    .cause-date-popup p { margin: 0; }
+    .cause-date-popup button { flex: none; width: 26px; height: 26px; padding: 0; border: 1px solid currentColor; border-radius: 5px; color: inherit; background: transparent; font-size: 20px; line-height: 1; }
+    [data-publication="published"] { color: #146c32; background: #e8f6ed; border-color: #75b78b; }
+    [data-publication="unpublished"] { color: #b42318; background: #fff0ee; border-color: #e4a39c; }
     .input-history + .date-loader { margin-top: 14px; }
 
     .inline-preview {
@@ -1152,6 +1158,11 @@
     <span>Keyboard shortcut: Ctrl/⌘ + Enter</span>
   </footer>
 
+  <div class="cause-date-popup" id="causeDatePopup" role="group" aria-label="पेशी सूची प्रकाशन स्थिति" hidden>
+    <p id="causeDatePopupMessage"></p>
+    <button type="button" id="causeDatePopupClose" aria-label="प्रकाशन स्थिति बन्द गर्नुहोस्">×</button>
+  </div>
+
   <div class="lookup-modal" id="causeListMissingDialog" role="dialog" aria-modal="true" aria-labelledby="causeListMissingTitle" aria-describedby="causeListMissingMessage">
     <div class="lookup-modal-card">
       <h2 id="causeListMissingTitle">पेशी सूची भेटिएन</h2>
@@ -1454,6 +1465,10 @@
       const causeDateSearch = document.getElementById("causeDateSearch");
       const causeDateSearchBtn = document.getElementById("causeDateSearchBtn");
       const causeDateNotice = document.getElementById("causeDateNotice");
+      const causeDatePopup = document.getElementById("causeDatePopup");
+      const causeDatePopupMessage = document.getElementById("causeDatePopupMessage");
+      const causeDatePopupClose = document.getElementById("causeDatePopupClose");
+      let causeDatePopupTimer;
       const inlinePreview = document.getElementById("inlinePreview");
       const monthlyPreview = document.getElementById("monthlyPreview");
       const missingDialog = document.getElementById("causeListMissingDialog");
@@ -1672,18 +1687,36 @@
         causeDateRefreshTimer = setTimeout(refreshCurrentCauseDate, CALENDAR_DAY_MS - (nepalNow % CALENDAR_DAY_MS) + 50);
       }
 
+      function closeCauseDatePopup() {
+        clearTimeout(causeDatePopupTimer);
+        causeDatePopup.hidden = true;
+      }
+
       function clearCauseDateNotice() {
+        closeCauseDatePopup();
         causeDateNotice.hidden = true;
         causeDateNotice.textContent = "";
+        delete causeDateNotice.dataset.publication;
+      }
+
+      function showCauseListPublication(dateKey, published) {
+        const utcDate = bsDateToUtc(dateKey);
+        const weekday = utcDate === null ? "बार उपलब्ध छैन" : ["आइतबार", "सोमबार", "मङ्गलबार", "बुधबार", "बिहीबार", "शुक्रबार", "शनिबार"][new Date(utcDate).getUTCDay()];
+        const message = `${normalizeBsDate(dateKey)} — ${weekday}: पेशी सूची ${published ? "प्रकाशित छ।" : "प्रकाशित भएको छैन।"}`;
+        const publication = published ? "published" : "unpublished";
+        causeDateNotice.dataset.publication = publication;
+        causeDateNotice.textContent = message;
+        causeDateNotice.hidden = false;
+        causeDatePopup.dataset.publication = publication;
+        causeDatePopupMessage.textContent = message;
+        causeDatePopup.hidden = false;
+        clearTimeout(causeDatePopupTimer);
+        causeDatePopupTimer = setTimeout(closeCauseDatePopup, 10000);
+        return message;
       }
 
       function showUnpublishedCauseList(dateKey) {
-        const utcDate = bsDateToUtc(dateKey);
-        const weekday = utcDate === null ? "unknown" : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(utcDate).getUTCDay()];
-        const message = `The day is ${weekday} and no causelist is published in the given date.`;
-        causeDateNotice.textContent = message;
-        causeDateNotice.hidden = false;
-        showInputError(message);
+        showInputError(showCauseListPublication(dateKey, false));
       }
 
       function causeListFilename(dateKey) {
@@ -2647,10 +2680,12 @@
           }
           // Check the selected judge before replacing the existing source or output.
           if (!meta.judges.some((name) => normalize(name) === targetKey)) {
+            showCauseListPublication(dateKey, true);
             throw new Error(`यस मितिको सूचीमा “${targetName}” को विवरण भेटिएन।`);
           }
           causeDateLoadController = null;
           syncSource(payload.html, `index${dateKey}.html`);
+          showCauseListPublication(dateKey, true);
           if (!runFilter()) {
             showInputError(outputStatus.textContent || "Output तयार गर्न सकिएन।");
             return;
@@ -3785,6 +3820,7 @@
         if (open) renderRowFilterPanel();
       });
       clearBtn.addEventListener("click", clearAll);
+      causeDatePopupClose.addEventListener("click", closeCauseDatePopup);
       causeDateSearchBtn.addEventListener("click", loadCauseListByDate);
       causeDateSearch.addEventListener("input", () => {
         causeDateEdited = true;
@@ -3885,6 +3921,10 @@
         if (event.key === "Escape" && !advancedSearchResults.hidden) {
           closeAdvancedSearchPanel(false);
           advancedSearchInput.focus();
+          return;
+        }
+        if (event.key === "Escape" && !causeDatePopup.hidden) {
+          closeCauseDatePopup();
           return;
         }
         if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
