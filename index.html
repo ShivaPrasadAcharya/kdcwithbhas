@@ -610,6 +610,10 @@
       box-shadow: 0 8px 18px rgba(123,31,43,.19);
     }
 
+    #goCauseListBtn:not(:disabled) { color: #fff; background: #238636; border-color: #238636; }
+    #goCauseListBtn:not(:disabled):hover { background: #1b6e2c; }
+    .preparation-fields .reuse-preparation { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+    .preparation-fields .reuse-preparation input { width: 17px; min-height: 17px; height: 17px; accent-color: #238636; }
     .btn-subtle { color: var(--maroon); background: #fff8f0; border-color: #e7d8c3; }
     .btn.is-copied { color:#fff; background:#238636; border-color:#238636; box-shadow:0 7px 18px rgba(35,134,54,.24); }
 
@@ -630,7 +634,7 @@
 
     .judge-picker {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: auto minmax(0, 1fr);
       gap: 9px 12px;
       align-items: center;
       width: 100%;
@@ -1024,7 +1028,6 @@
             <select id="judgeSelect" aria-label="Filter र आदेशका लागि न्यायाधीश छान्नुहोस्">
               <option value="शिवप्रसाद आचार्य">शिवप्रसाद आचार्य</option>
             </select>
-            <button type="button" class="btn btn-subtle" id="goCauseListBtn" title="छानिएको न्यायाधीशको पेशी सूची खोल्नुहोस्" disabled>GO</button>
             <small>Source code मा भेटिएका न्यायाधीशहरू यहाँ स्वतः थपिन्छन्।</small>
           </div>
 
@@ -1065,6 +1068,7 @@
           <details class="input-disclosure" id="preparationDisclosure">
             <summary>फैसला तयार गर्न सहयोग गर्ने — शाखा अधिकृत, कम्प्युटर अपरेटर, इजलास नम्बर</summary>
           <div class="preparation-fields" role="group" aria-label="फैसला तयार गर्न सहयोग गर्ने" aria-describedby="preparationFieldsHint">
+            <label class="reuse-preparation"><input type="checkbox" id="usePreviousPreparation" checked> Use previous entry — अघिल्लो विवरण प्रयोग गर्नुहोस्</label>
             <label for="branchOfficerInput">शाखा अधिकृत</label>
             <input type="text" id="branchOfficerInput" autocomplete="off" placeholder="नाम (ऐच्छिक)">
             <label for="computerOperatorInput">कम्प्युटर अपरेटर</label>
@@ -1086,7 +1090,7 @@
           </div>
 
           <div class="actions">
-            <button type="button" class="btn btn-primary" id="filterBtn">शिवप्रसाद आचार्यको data मात्र राख्नुहोस्</button>
+            <button type="button" class="btn" id="goCauseListBtn" title="छानिएको न्यायाधीशको पेशी सूची तयार गरी खोल्नुहोस्" disabled>GO</button>
             <button type="button" class="btn" id="clearBtn" disabled>खाली गर्नुहोस्</button>
           </div>
           <div class="status" id="inputStatus" role="status" aria-live="polite">मिति राखेर पेशी सूची ल्याउनुहोस्, वा HTML/TXT upload अथवा code paste गर्नुहोस्।</div>
@@ -1417,12 +1421,14 @@
       const sourceOutput = document.getElementById("sourceOutput");
       const judgeSelect = document.getElementById("judgeSelect");
       const goCauseListBtn = document.getElementById("goCauseListBtn");
+      const usePreviousPreparation = document.getElementById("usePreviousPreparation");
+      const PREPARATION_KEY = "kdcwithbhas:preparation-details:v1";
+      let savedPreparation = {};
       const branchOfficerInput = document.getElementById("branchOfficerInput");
       const computerOperatorInput = document.getElementById("computerOperatorInput");
       const benchNumberInput = document.getElementById("benchNumberInput");
       const targetPill = document.getElementById("targetPill");
       const footerTarget = document.getElementById("footerTarget");
-      const filterBtn = document.getElementById("filterBtn");
       const rowFilterToggle = document.getElementById("rowFilterToggle");
       const rowFilterPanel = document.getElementById("rowFilterPanel");
       const rowFilterList = document.getElementById("rowFilterList");
@@ -1502,8 +1508,17 @@
       let rowFilterSelections = new Map();
       let rowFilterTables = [];
 
+      function updateGoButton() {
+        goCauseListBtn.disabled = !sourceCode.trim() && !outputCode;
+      }
+
+      function openSelectedCauseList() {
+        if (sourceCode.trim() && !monthlyOutputs.length && !runFilter()) return;
+        previewOutput();
+      }
+
       function broadcastRealtimePreview(mode = "single") {
-        goCauseListBtn.disabled = !outputCode;
+        updateGoButton();
         document.dispatchEvent(new CustomEvent("cause-list:preview-updated", {
           detail: {
             html: outputCode,
@@ -1537,7 +1552,7 @@
         if (stats.date) causeListDateStat.textContent = stats.date;
         if (stats.selectedRows) selectedRowCount.textContent = stats.selectedRows;
         outputReady.classList.toggle("hidden", !outputCode);
-        goCauseListBtn.disabled = !outputCode;
+        updateGoButton();
         outputEmpty.classList.toggle("hidden", Boolean(outputCode));
         clearBtn.disabled = !sourceCode.trim() && !outputCode;
         outputStatus.textContent = outputCode ? "अर्को device बाट synced preview प्राप्त भयो।" : "";
@@ -2699,7 +2714,6 @@
         targetKey = normalize(targetName);
         targetPill.textContent = `लक्षित न्यायाधीश: ${targetName}`;
         footerTarget.textContent = `Target: माननीय जिल्ला न्यायाधीश श्री ${targetName}`;
-        filterBtn.textContent = `${targetName}को data मात्र राख्नुहोस्`;
       }
 
       function refreshJudgeOptions(source) {
@@ -2746,7 +2760,7 @@
           ? (datedFilename[1].length === 6 ? `20${datedFilename[1]}` : datedFilename[1])
           : "";
         if (sourceCode.trim()) refreshJudgeOptions(sourceCode);
-        filterBtn.disabled = false;
+        updateGoButton();
         rowFilterToggle.disabled = !sourceCode.trim();
         clearBtn.disabled = !sourceCode.trim() && !outputCode;
         fileName.textContent = label;
@@ -2794,6 +2808,34 @@
         };
       }
 
+      function applySavedPreparation() {
+        const details = usePreviousPreparation.checked ? savedPreparation : {};
+        branchOfficerInput.value = details.branchOfficer || "";
+        computerOperatorInput.value = details.computerOperator || "";
+        benchNumberInput.value = details.benchNumber || "";
+      }
+
+      function persistPreparation(saveFields = false) {
+        if (saveFields) savedPreparation = readPreparationDetails();
+        try {
+          localStorage.setItem(PREPARATION_KEY, JSON.stringify({ usePrevious: usePreviousPreparation.checked, details: savedPreparation }));
+        } catch (error) { /* The form remains usable if browser storage is unavailable. */ }
+      }
+
+      function restorePreparation() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(PREPARATION_KEY) || "null");
+          if (stored && typeof stored === "object") {
+            usePreviousPreparation.checked = stored.usePrevious !== false;
+            const details = stored.details || {};
+            ["branchOfficer", "computerOperator", "benchNumber"].forEach((name) => {
+              if (typeof details[name] === "string") savedPreparation[name] = details[name];
+            });
+          }
+        } catch (error) { /* Keep the checked default and empty inputs. */ }
+        applySavedPreparation();
+      }
+
       function saveInputSession(result) {
         const session = {
           source: sourceCode,
@@ -2816,12 +2858,13 @@
         branchOfficerInput.value = details.branchOfficer || "";
         computerOperatorInput.value = details.computerOperator || "";
         benchNumberInput.value = details.benchNumber || "";
+        persistPreparation(true);
         setMode("paste");
         syncSource(session.source, session.fileLabel || "History");
         const judge = Array.from(judgeSelect.options).find((option) => normalize(option.value) === normalize(session.target));
         if (judge) judgeSelect.value = judge.value;
         updateTargetUI();
-        inputStatus.textContent = "History बाट input restore भयो। Filter button थिच्नुहोस्।";
+        inputStatus.textContent = "History बाट input restore भयो। GO थिच्नुहोस्।";
         inputStatus.className = "status success";
       }
 
@@ -2919,13 +2962,13 @@
         const editorRuntime = doc.createElement("script");
         editorRuntime.id = "preview-editor-runtime";
         editorRuntime.async = false;
-        editorRuntime.src = "preview-editor.js?v=7";
+        editorRuntime.src = "preview-editor.js?v=8";
         (doc.body || doc.documentElement).appendChild(editorRuntime);
         const runtime = doc.createElement("script");
         runtime.id = "court-order-builder-runtime";
         runtime.async = false;
         runtime.setAttribute("data-version", "preview-editor-4");
-        runtime.src = "cause-list-runtime.js?v=preview-cleanup-2";
+        runtime.src = "cause-list-runtime.js?v=party-layout-3";
         (doc.body || doc.documentElement).appendChild(runtime);
         const proofreaderRuntime = doc.createElement("script");
         proofreaderRuntime.id = "nepali-proofreader-engine-runtime";
@@ -3646,6 +3689,7 @@
         branchOfficerInput.value = "";
         computerOperatorInput.value = "";
         benchNumberInput.value = "";
+        if (usePreviousPreparation.checked) applySavedPreparation();
         sourceOutput.value = "";
         inlinePreview.srcdoc = "";
         inlinePreview.classList.remove("is-monthly");
@@ -3654,7 +3698,7 @@
         monthlyPreview.classList.add("hidden");
         fileInput.value = "";
         fileName.textContent = "";
-        filterBtn.disabled = false;
+        updateGoButton();
         rowFilterToggle.disabled = true;
         clearBtn.disabled = true;
         outputReady.classList.add("hidden");
@@ -3692,8 +3736,16 @@
       chooseFile.addEventListener("click", () => fileInput.click());
       fileInput.addEventListener("change", () => readFile(fileInput.files[0]));
       sourceInput.addEventListener("input", () => syncSource(sourceInput.value));
+      usePreviousPreparation.addEventListener("change", () => {
+        persistPreparation();
+        applySavedPreparation();
+        if (sourceCode.trim() && !causeDateLoadController) runFilter();
+        document.dispatchEvent(new CustomEvent("cause-list:field-snapshot"));
+      });
       [branchOfficerInput, computerOperatorInput, benchNumberInput].forEach((input) => {
+        input.addEventListener("input", () => persistPreparation(true));
         input.addEventListener("change", () => {
+          persistPreparation(true);
           if (sourceCode.trim() && !causeDateLoadController) runFilter();
         });
       });
@@ -3714,7 +3766,6 @@
         rowFilterToggle.setAttribute("aria-expanded", String(open));
         if (open) renderRowFilterPanel();
       });
-      filterBtn.addEventListener("click", runFilter);
       clearBtn.addEventListener("click", clearAll);
       causeDateSearchBtn.addEventListener("click", loadCauseListByDate);
       causeDateSearch.addEventListener("input", () => {
@@ -3775,7 +3826,7 @@
       document.getElementById("downloadTxt").addEventListener("click", () => download("txt", "text/plain"));
       document.getElementById("downloadJson").addEventListener("click", downloadIndexJson);
       document.getElementById("previewBtn").addEventListener("click", previewOutput);
-      goCauseListBtn.addEventListener("click", previewOutput);
+      goCauseListBtn.addEventListener("click", openSelectedCauseList);
       outputMenuBtn.addEventListener("click", () => {
         const open = outputMenuPanel.hidden;
         setOutputMenu(open, open);
@@ -3820,7 +3871,7 @@
         }
         if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
           event.preventDefault();
-          runFilter();
+          openSelectedCauseList();
         }
       });
       refreshCurrentCauseDate();
@@ -3830,6 +3881,7 @@
         if (!document.hidden) refreshCurrentCauseDate();
       });
       readInputHistory();
+      restorePreparation();
       const openSharedRibbonSearch = () => {
         const params = new URLSearchParams(location.search);
         const query = String(params.get("search") || "").trim();

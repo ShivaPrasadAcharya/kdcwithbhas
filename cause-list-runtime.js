@@ -1332,9 +1332,9 @@
             s(t) +
             '" class="cob-party"><span class="cob-party-name">' +
             s(a) +
-            '</span><span class="cob-party-leader" aria-hidden="true"></span><span class="cob-party-role" style="font-weight:700;text-decoration:underline"><b><u>' +
+            '</span><span class="cob-party-leader" aria-hidden="true"></span><span class="cob-party-role">' +
             s(t) +
-            "</u></b></span></p>"
+            "</span></p>"
           );
         }
         function partyBlock(name, role, layout) {
@@ -1980,8 +1980,8 @@
                             '"/></w:rPr><w:tab/></w:r>' +
                             de(
                               e.dataset.partyRole || "",
-                              !0,
-                              !0,
+                              !1,
+                              !1,
                               fontHalfPoints,
                             ))
                         : d &&

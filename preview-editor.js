@@ -175,7 +175,7 @@
     const section=document.createElement("div");section.className="pe-tools";
     const field=(name,label,type,value,extra)=>'<label>'+label+'<input data-pe-field="'+name+'" type="'+(type||"number")+'" value="'+escapeHtml(value)+'" '+(extra||"")+'></label>';
     section.innerHTML=[
-      '<details class="pe-section" open><summary>Text cleanup</summary><div class="pe-buttons"><button type="button" data-pe-action="remove-empty-lines">Remove empty lines</button><button type="button" data-pe-action="remove-double-spaces">Remove double spaces</button></div></details>',
+      '<details class="pe-section" open><summary>Text cleanup</summary><div class="pe-buttons"><button type="button" data-pe-action="remove-empty-lines">Remove empty lines</button><button type="button" data-pe-action="remove-double-spaces">Remove double spaces</button><button type="button" data-pe-action="remove-punctuation-spaces">Remove spaces before punctuation</button></div></details>',
       '<details class="pe-section" open><summary>Paragraph styles & formatting</summary><div class="pe-fields">',
       '<label>Style<select data-pe-field="preset">'+Object.keys(labels).map(k=>'<option value="'+k+'">'+labels[k]+'</option>').join("")+'</select></label>',
       field("font","Font","text","Kalimati",'list="peFontNames"'),
@@ -584,6 +584,19 @@
     section.querySelectorAll("button").forEach(button=>button.addEventListener("mousedown",e=>e.preventDefault()));
     toolbar.querySelectorAll("button").forEach(button=>button.addEventListener("mousedown",e=>e.preventDefault()));
     function runAction(action) {
+      if(action==="remove-punctuation-spaces")return transact(()=>{
+        draft.querySelectorAll("p,li,h1,h2,h3,h4,h5,h6,[data-docx-p]").forEach(p=>{
+          if(p.querySelector("p,li,[data-docx-p]"))return;
+          const nodes=textNodes(p).filter(n=>!n.parentElement.closest("[data-pe-tab]"));
+          const text=nodes.map(n=>n.nodeValue).join("");
+          const removals=Array.from(text.matchAll(/[ \u00a0\u202f]+(?=[.,;:!?।॥，。；：！？])/gu),m=>({start:m.index,end:m.index+m[0].length}));
+          let offset=0;
+          nodes.forEach(n=>{
+            const start=offset;offset+=n.nodeValue.length;
+            n.nodeValue=Array.from(n.nodeValue.split(""),(ch,i)=>removals.some(r=>start+i>=r.start&&start+i<r.end)?"":ch).join("");
+          });
+        });tell("Spaces before punctuation removed. Undo is available.");
+      });
       if(action==="remove-empty-lines")return transact(()=>{
         draft.querySelectorAll("p,[data-docx-p]").forEach(p=>{
           if(!p.textContent.replace(/[\s\u200b\ufeff]/g,"")&&!p.querySelector("img,table,hr,[data-cob-list-marker]"))p.remove();
