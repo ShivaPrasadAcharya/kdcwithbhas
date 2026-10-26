@@ -1,6 +1,6 @@
 (function (root) {
   "use strict";
-  const SETTINGS_KEY = "kdcwithbhas:preview-settings:v1";
+  const SETTINGS_KEY = "readymadeorders:preview-settings:v1";
   const defaults = {toolbar:true, marks:false, askPaste:true, pasteMode:"plain", normalize:true, recovery:true, interval:30, retain:10, review:"changed", tabWidth:4};
   const labels = {normal:"सामान्य अनुच्छेद", heading:"शीर्षक", bahas:"बहस", thahar:"ठहर", tapasil:"तपसिल", signature:"हस्ताक्षर"};
   const baseStyle = {font:"Kalimati", size:13, bold:false, italic:false, underline:false, color:"#111111", align:"justify", line:1.15, before:0, after:0, left:0, right:0, first:0, keepNext:false, keepLines:false, tabs:""};

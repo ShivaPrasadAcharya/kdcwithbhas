@@ -2211,7 +2211,7 @@
                               const t = _(e),
                                 n = c(m(e.rawCase).caseNo) || "case";
                               return (
-                                "kdcwithbhas:CourtOrder:v1:" +
+                                "readymadeorders:CourtOrder:v1:" +
                                 (t.date && t.serial ? t.stem : n)
                               );
                             })(e)));

@@ -1,4 +1,4 @@
-# kdcwithbhas — बहससहित नेपाली अदालती आदेश/फैसला
+# readymadeorders — बहससहित नेपाली अदालती आदेश/फैसला
 
 Created from `ShivaPrasadAcharya/kdc`, with the advocate lookup and sentence generator from `ShivaPrasadAcharya/bahasgenerator`.
 

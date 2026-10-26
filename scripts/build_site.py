@@ -39,7 +39,7 @@ def build():
     (OUTPUT / data_name).write_bytes(script)
     (OUTPUT / "advocatedata.js").write_bytes(script)
     (OUTPUT / ".nojekyll").touch()
-    print(f"Built kdcwithbhas with {len(records):,} advocate records")
+    print(f"Built readymadeorders with {len(records):,} advocate records")
 
 
 if __name__ == "__main__":
